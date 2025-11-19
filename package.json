@@ -1,6 +1,6 @@
 {
   "name": "locar",
-  "version": "0.1.4-zoom1",
+  "version": "0.1.4-zoom2",
   "description": "Location-based AR from AR.js.",
   "files": [
     "dist",

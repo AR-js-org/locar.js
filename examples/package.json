@@ -2,7 +2,7 @@
   "dependencies": {
     "aframe": "^1.7.1",
     "aframe-look-at-component": "^1.0.0",
-    "locar": "0.1.2",
+    "locar": "file:../locar-0.1.4-zoom2.tgz",
     "locar-aframe": "0.1.2"
   },
   "devDependencies": {
