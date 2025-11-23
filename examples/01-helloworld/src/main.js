@@ -16,7 +16,7 @@ const cam = new LocAR.Webcam( {
     video: {
         facingMode: 'environment'
     }
-}, null);
+}, null, true);
 
 cam.on("webcamstarted", ev => {
     scene.background = ev.texture;
