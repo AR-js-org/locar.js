@@ -1,9 +1,13 @@
 import * as THREE from "three";
-import EventEmitter from "./event-emitter.js";
+import EventEmitter from "./event-emitter";
+
+export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/Webcam";
 
 /** Class to setup the webcam. */
 class Webcam extends EventEmitter {
-  #video;
+  #video: HTMLVideoElement | null;
+  sceneWebcam: THREE.Scene;
+  texture: THREE.VideoTexture | null;
 
   /**
    * Create a Webcam.
@@ -16,28 +20,34 @@ class Webcam extends EventEmitter {
 
   constructor(
     constraints = { video: { facingMode: "environment" } },
-    videoElementSelector,
+    videoElementSelector?: string,
   ) {
     super();
     this.sceneWebcam = new THREE.Scene();
     if (!videoElementSelector) {
       this.#video = document.createElement("video");
-      this.#video.setAttribute("autoplay", true);
-      this.#video.setAttribute("playsinline", true);
+      this.#video.setAttribute("autoplay", "true");
+      this.#video.setAttribute("playsinline", "true");
       this.#video.style.display = "none";
       document.body.appendChild(this.#video);
     } else {
       this.#video = document.querySelector(videoElementSelector);
     }
-    this.texture = new THREE.VideoTexture(this.#video);
+    this.texture = this.#video ? new THREE.VideoTexture(this.#video) : null;
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia(constraints)
         .then((stream) => {
-          this.#video.addEventListener("loadedmetadata", () => {
-            this.#video.setAttribute("width", this.#video.videoWidth);
-            this.#video.setAttribute("height", this.#video.videoHeight);
-            this.#video.play();
+          this.#video?.addEventListener("loadedmetadata", () => {
+            this.#video?.setAttribute(
+              "width",
+              this.#video?.videoWidth.toString() ?? "0",
+            );
+            this.#video?.setAttribute(
+              "height",
+              this.#video?.videoHeight.toString() ?? "0",
+            );
+            this.#video?.play();
             /**
              * Webcam started event.
              * @event Webcam#webcamstarted
@@ -45,7 +55,9 @@ class Webcam extends EventEmitter {
              */
             this.emit("webcamstarted", { texture: this.texture });
           });
-          this.#video.srcObject = stream;
+          if (this.#video) {
+            this.#video.srcObject = stream;
+          }
         })
         .catch((e) => {
           /**
@@ -71,7 +83,7 @@ class Webcam extends EventEmitter {
    * Should be called when your application closes.
    */
   dispose() {
-    this.texture.dispose();
+    this.texture?.dispose();
   }
 }
 

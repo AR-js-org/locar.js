@@ -5,16 +5,19 @@ import * as THREE from "three";
  * and raycasting.
  */
 class ClickHandler {
+  raycaster: THREE.Raycaster;
+  normalisedMousePosition: THREE.Vector2 | null;
+
   /**
    * Create a ClickHandler.
    * @param {THREE.WebGLRenderer} - The Three.js renderer on which the click
    * events will be handled.
    */
-  constructor(renderer) {
+  constructor(renderer: THREE.WebGLRenderer) {
     this.raycaster = new THREE.Raycaster();
-    this.normalisedMousePosition = new THREE.Vector2(null, null);
+    this.normalisedMousePosition = null;
     renderer.domElement.addEventListener("click", (e) => {
-      this.normalisedMousePosition.set(
+      this.normalisedMousePosition = new THREE.Vector2(
         (e.clientX / renderer.domElement.clientWidth) * 2 - 1,
         -((e.clientY / renderer.domElement.clientHeight) * 2) + 1,
       );
@@ -29,14 +32,11 @@ class ClickHandler {
    * cast into.
    * @return {Array} - array of all intersected objects.
    */
-  raycast(camera, scene) {
-    if (
-      this.normalisedMousePosition.x !== null &&
-      this.normalisedMousePosition.y !== null
-    ) {
+  raycast(camera: THREE.Camera, scene: THREE.Scene): THREE.Intersection[] {
+    if (this.normalisedMousePosition !== null) {
       this.raycaster.setFromCamera(this.normalisedMousePosition, camera);
       const objects = this.raycaster.intersectObjects(scene.children, false);
-      this.normalisedMousePosition.set(null, null);
+      this.normalisedMousePosition = null;
       return objects;
     }
     return [];

@@ -1,5 +1,9 @@
 # Updates
 
+## `0.1.6` (2025-11-27).
+
+Added option `orientationChangeThreshold` to `LocAR.DeviceOrientationControls` to define a minimal orientation change needed to trigger an update on the `object`. This helps to reduce jittering due to frequent and tiny updates of the device sensors.
+
 ## `0.1.5` (2025-11-26).
 
 Added ability to add multiple event handlers to an event, and remove a given event handler with the `off()` method.

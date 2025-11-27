@@ -33,10 +33,13 @@ window.addEventListener("resize", ev => {
 
 let firstLocation = true;
 
-let deviceOrientationControls = new LocAR.DeviceOrientationControls(camera);
+let deviceOrientationControls = new LocAR.DeviceOrientationControls(
+    camera, 
+    { orientationChangeThreshold: 0.005 }
+);
 
 deviceOrientationControls.on("deviceorientationgranted", ev => {
-    ev.target.connect();
+    ev.target.connect() ;
 });
 
 deviceOrientationControls.on("deviceorientationerror", error => {

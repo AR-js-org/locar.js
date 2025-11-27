@@ -1,20 +1,27 @@
-import SphMercProjection from "./sphmerc-projection.js";
-import EventEmitter from "./event-emitter.js";
+import SphMercProjection from "./sphmerc-projection";
+import EventEmitter from "./event-emitter";
 import * as THREE from "three";
+import type { LonLat } from "../types/LonLat";
+import type { ServerLogger } from "../types/ServerLogger";
+
+export interface GpsOptions {
+  gpsMinDistance?: number;
+  gpsMinAccuracy?: number;
+}
 
 /** The main class for the LocAR.js system.  */
 class LocationBased extends EventEmitter {
-  #proj;
-  // eslint-disable-next-line no-unused-private-class-members
-  #eventHandlers;
-  #lastCoords;
-  #gpsMinDistance;
-  #gpsMinAccuracy;
-  #watchPositionId;
-  #initialPosition;
-  #gpsCount;
-  #session;
-  #serverLogger;
+  scene: THREE.Scene;
+  camera: THREE.Camera;
+  #proj: SphMercProjection;
+  #lastCoords: LonLat | null;
+  #gpsMinDistance: number;
+  #gpsMinAccuracy: number;
+  #watchPositionId: number | null;
+  #initialPosition: [number, number] | null;
+  #gpsCount: number;
+  #session: number;
+  #serverLogger: ServerLogger | null;
 
   /**
    * @param {THREE.Scene} scene - The Three.js scene to use.
@@ -24,7 +31,12 @@ class LocationBased extends EventEmitter {
    * setGpsOptions() below.
    * @param {Object} serverLogger - an object which can optionally log GPS position to a server for debugging. null by default, so no logging will be done. This object should implement a sendData() method to send data (2nd arg) to a given endpoint (1st arg). Please see source code for details. Ensure you comply with privacy laws (GDPR or equivalent) if implementing this.
    */
-  constructor(scene, camera, options = {}, serverLogger = null) {
+  constructor(
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+    options: GpsOptions = {},
+    serverLogger: ServerLogger | null = null,
+  ) {
     super();
     this.scene = scene;
     this.camera = camera;
@@ -46,7 +58,7 @@ class LocationBased extends EventEmitter {
    * taking longitude and latitude as arguments and returning an array
    * containing easting and northing.
    */
-  setProjection(proj) {
+  setProjection(proj: SphMercProjection) {
     this.#proj = proj;
   }
 
@@ -57,7 +69,7 @@ class LocationBased extends EventEmitter {
    * must move to process a new GPS reading, and the latter specifies the
    * minimum accuracy, in metres, for a GPS reading to be counted.
    */
-  setGpsOptions(options = {}) {
+  setGpsOptions(options: GpsOptions = {}) {
     if (options.gpsMinDistance !== undefined) {
       this.#gpsMinDistance = options.gpsMinDistance;
     }
@@ -95,7 +107,7 @@ class LocationBased extends EventEmitter {
         },
         {
           enableHighAccuracy: true,
-        }
+        },
       );
       return true;
     }
@@ -125,7 +137,12 @@ class LocationBased extends EventEmitter {
    * @param {number} acc - The accuracy of the GPS reading in metres. May be
    * ignored if lower than the specified minimum accuracy.
    */
-  fakeGps(lon, lat, elev = null, acc = 0) {
+  fakeGps(
+    lon: number,
+    lat: number,
+    elev: number | null = null,
+    acc: number = 0,
+  ) {
     if (elev !== null) {
       this.setElevation(elev);
     }
@@ -136,7 +153,7 @@ class LocationBased extends EventEmitter {
         latitude: lat,
         accuracy: acc,
       },
-    });
+    } as GeolocationPosition);
   }
 
   /**
@@ -150,7 +167,7 @@ class LocationBased extends EventEmitter {
    * @param {number} lat - The latitude.
    * @return {Array} a two member array containing the WebGL x and z coordinates
    */
-  lonLatToWorldCoords(lon, lat) {
+  lonLatToWorldCoords(lon: number, lat: number) {
     const projectedPos = this.#proj.project(lon, lat);
     if (this.#initialPosition) {
       projectedPos[0] -= this.#initialPosition[0];
@@ -171,8 +188,14 @@ class LocationBased extends EventEmitter {
    * @param {Object} properties - properties describing the object (for example,
    * the contents of the GeoJSON properties field).
    */
-  add(object, lon, lat, elev, properties = {}) {
-    object.properties = properties;
+  add(
+    object: THREE.Object3D,
+    lon: number,
+    lat: number,
+    elev: number | undefined,
+    properties: Record<string, any> = {},
+  ) {
+    (object as any).properties = properties;
     this.#setWorldPosition(object, lon, lat, elev);
     this.scene.add(object);
     this.#serverLogger?.sendData("/object/new", {
@@ -184,7 +207,12 @@ class LocationBased extends EventEmitter {
     });
   }
 
-  #setWorldPosition(object, lon, lat, elev) {
+  #setWorldPosition(
+    object: THREE.Object3D,
+    lon: number,
+    lat: number,
+    elev?: number,
+  ) {
     const worldCoords = this.lonLatToWorldCoords(lon, lat);
     if (elev !== undefined) {
       object.position.y = elev;
@@ -196,15 +224,15 @@ class LocationBased extends EventEmitter {
    * Set the elevation (y coordinate) of the camera.
    * @param {number} elev - the elevation in metres.
    */
-  setElevation(elev) {
+  setElevation(elev: number) {
     this.camera.position.y = elev;
   }
 
-  #setWorldOrigin(lon, lat) {
+  #setWorldOrigin(lon: number, lat: number) {
     this.#initialPosition = this.#proj.project(lon, lat);
   }
 
-  #gpsReceived(position) {
+  #gpsReceived(position: GeolocationPosition) {
     let distMoved = Number.MAX_VALUE;
     this.#gpsCount++;
     this.#serverLogger?.sendData("/gps/new", {
@@ -230,7 +258,7 @@ class LocationBased extends EventEmitter {
         if (!this.#initialPosition) {
           this.#setWorldOrigin(
             position.coords.longitude,
-            position.coords.latitude
+            position.coords.latitude,
           );
           this.#serverLogger?.sendData("/worldorigin/new", {
             gpsCount: this.#gpsCount,
@@ -244,7 +272,7 @@ class LocationBased extends EventEmitter {
         this.#setWorldPosition(
           this.camera,
           position.coords.longitude,
-          position.coords.latitude
+          position.coords.latitude,
         );
 
         this.#serverLogger?.sendData("/gps/accepted", {
@@ -270,7 +298,7 @@ class LocationBased extends EventEmitter {
    *
    * Taken from original A-Frame AR.js location-based components
    */
-  #haversineDist(src, dest) {
+  #haversineDist(src: LonLat, dest: LonLat) {
     const dlongitude = THREE.MathUtils.degToRad(dest.longitude - src.longitude);
     const dlatitude = THREE.MathUtils.degToRad(dest.latitude - src.latitude);
 
@@ -290,7 +318,7 @@ class LocationBased extends EventEmitter {
    */
   getLastKnownLocation() {
     return this.#lastCoords;
-  }    
+  }
 }
 
 export default LocationBased;
