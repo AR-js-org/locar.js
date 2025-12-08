@@ -312,13 +312,7 @@ class DeviceOrientationControls extends EventDispatcher {
         const targetQuaternion = new Quaternion();
 
         if (isIOS) {
-          setObjectQuaternion(
-            targetQuaternion,
-            alpha,
-            beta,
-            gamma,
-            orient,
-          );
+          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
 
           const targetEuler = new Euler().setFromQuaternion(
             targetQuaternion,
@@ -340,20 +334,11 @@ class DeviceOrientationControls extends EventDispatcher {
           targetQuaternion.setFromEuler(targetEuler);
         } else {
           // Non-iOS path
-          setObjectQuaternion(
-            targetQuaternion,
-            alpha,
-            beta,
-            gamma,
-            orient,
-          );
+          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
         }
 
-        // Apply threshold check if needed 
-        if (
-          scope.lastQuaternion &&
-          scope.orientationChangeThreshold > 0
-        ) {
+        // Apply threshold check if needed
+        if (scope.lastQuaternion && scope.orientationChangeThreshold > 0) {
           const angleDiff = targetQuaternion.angleTo(scope.lastQuaternion);
           if (angleDiff < scope.orientationChangeThreshold) {
             return;
@@ -409,7 +394,6 @@ class DeviceOrientationControls extends EventDispatcher {
       }
       return heading;
     };
-
 
     // Provided in fix on issue #466 (main AR.js) - iOS related
     this.updateAlphaOffset = () => {
