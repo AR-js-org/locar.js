@@ -80,7 +80,6 @@ class DeviceOrientationControls extends EventDispatcher {
   alphaOffset: number;
   orientationOffset: number;
   initialOffset: boolean | null;
-  lastCompassY: number | undefined;
   lastQuaternion: Quaternion | null;
   orientationChangeEventName: "deviceorientation" | "deviceorientationabsolute";
   smoothingFactor: number;
@@ -129,7 +128,6 @@ class DeviceOrientationControls extends EventDispatcher {
     this.orientationOffset = 0; // iOS orientation offset
     this.initialOffset = null; // used in fix provided in issue #466 on main AR.js repo, iOS related
 
-    this.lastCompassY = undefined;
     this.lastQuaternion = null;
 
     this.orientationChangeEventName =
@@ -319,17 +317,10 @@ class DeviceOrientationControls extends EventDispatcher {
             "YXZ",
           );
 
-          let compassY = MathUtils.degToRad(
+          const compassY = MathUtils.degToRad(
             360 - (device.webkitCompassHeading ?? 0),
           );
 
-          if (scope.smoothingFactor < 1 && scope.lastCompassY !== undefined) {
-            compassY =
-              scope.lastCompassY * (1 - scope.smoothingFactor) +
-              compassY * scope.smoothingFactor;
-          }
-
-          scope.lastCompassY = compassY;
           targetEuler.y = compassY + (scope.orientationOffset || 0);
           targetQuaternion.setFromEuler(targetEuler);
         } else {
