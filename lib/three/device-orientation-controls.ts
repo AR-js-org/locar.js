@@ -80,8 +80,7 @@ class DeviceOrientationControls extends EventDispatcher {
   alphaOffset: number;
   orientationOffset: number;
   initialOffset: boolean | null;
-  lastCompassY: number | undefined;
-  lastOrientation: { alpha: number; beta: number; gamma: number } | null;
+  lastQuaternion: Quaternion | null;
   orientationChangeEventName: "deviceorientation" | "deviceorientationabsolute";
   smoothingFactor: number;
   enablePermissionDialog: boolean;
@@ -93,18 +92,6 @@ class DeviceOrientationControls extends EventDispatcher {
   requestOrientationPermissions: () => void;
   update: () => void;
   getCorrectedHeading: () => number;
-  _calcAngleWithThreshold: (a: number, b: number) => number;
-  _orderAngle: (
-    a: number,
-    b: number,
-    range?: number,
-  ) => { left: number; right: number };
-  _getSmoothedAngle: (
-    a: number,
-    b: number,
-    k: number,
-    range?: number,
-  ) => number;
   updateAlphaOffset: () => void;
   dispose: () => void;
   getAlpha: () => number;
@@ -141,8 +128,7 @@ class DeviceOrientationControls extends EventDispatcher {
     this.orientationOffset = 0; // iOS orientation offset
     this.initialOffset = null; // used in fix provided in issue #466 on main AR.js repo, iOS related
 
-    this.lastCompassY = undefined;
-    this.lastOrientation = null;
+    this.lastQuaternion = null;
 
     this.orientationChangeEventName =
       "ondeviceorientationabsolute" in window
@@ -245,6 +231,7 @@ class DeviceOrientationControls extends EventDispatcher {
       scope.enabled = false;
       scope.initialOffset = false;
       scope.deviceOrientation = null;
+      scope.lastQuaternion = null;
     };
 
     // On iOS 13+ devices, request orientation permissions
@@ -320,94 +307,50 @@ class DeviceOrientationControls extends EventDispatcher {
           ? MathUtils.degToRad(scope.screenOrientation)
           : 0; // O
 
-        if (scope.smoothingFactor < 1) {
-          if (scope.lastOrientation) {
-            const k = scope.smoothingFactor;
-            alpha = scope._getSmoothedAngle(
-              alpha,
-              scope.lastOrientation.alpha,
-              k,
-            );
-            beta = scope._getSmoothedAngle(
-              beta + Math.PI,
-              scope.lastOrientation.beta,
-              k,
-            );
-            gamma = scope._getSmoothedAngle(
-              gamma + HALF_PI,
-              scope.lastOrientation.gamma,
-              k,
-              Math.PI,
-            );
-          } else {
-            beta += Math.PI;
-            gamma += HALF_PI;
-          }
-        }
-
-        if (scope.lastOrientation) {
-          alpha = scope._calcAngleWithThreshold(
-            alpha,
-            scope.lastOrientation.alpha,
-          );
-          beta = scope._calcAngleWithThreshold(
-            beta,
-            scope.lastOrientation.beta,
-          );
-          gamma = scope._calcAngleWithThreshold(
-            gamma,
-            scope.lastOrientation.gamma,
-          );
-        }
+        const targetQuaternion = new Quaternion();
 
         if (isIOS) {
-          const currentQuaternion = new Quaternion();
-          setObjectQuaternion(
-            currentQuaternion,
-            alpha,
-            scope.smoothingFactor < 1 ? beta - Math.PI : beta,
-            scope.smoothingFactor < 1 ? gamma - Math.PI / 2 : gamma,
-            orient,
-          );
+          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
 
-          const currentEuler = new Euler().setFromQuaternion(
-            currentQuaternion,
+          const targetEuler = new Euler().setFromQuaternion(
+            targetQuaternion,
             "YXZ",
           );
 
-          let compassY = MathUtils.degToRad(
+          const compassY = MathUtils.degToRad(
             360 - (device.webkitCompassHeading ?? 0),
           );
 
-          if (scope.smoothingFactor < 1 && scope.lastCompassY !== void 0) {
-            compassY = scope._getSmoothedAngle(
-              compassY,
-              scope.lastCompassY,
-              scope.smoothingFactor,
-            );
-          }
-
-          scope.lastCompassY = compassY;
-
-          currentEuler.y = compassY + (scope.orientationOffset || 0);
-
-          currentQuaternion.setFromEuler(currentEuler);
-
-          scope.object.quaternion.copy(currentQuaternion);
+          targetEuler.y = compassY + (scope.orientationOffset || 0);
+          targetQuaternion.setFromEuler(targetEuler);
         } else {
-          setObjectQuaternion(
-            scope.object.quaternion,
-            isIOS ? alpha + scope.alphaOffset : alpha,
-            scope.smoothingFactor < 1 ? beta - Math.PI : beta,
-            scope.smoothingFactor < 1 ? gamma - HALF_PI : gamma,
-            orient,
-          );
+          // Non-iOS path
+          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
         }
-        scope.lastOrientation = {
-          alpha,
-          beta,
-          gamma,
-        };
+
+        // Apply threshold check if needed
+        if (scope.lastQuaternion && scope.orientationChangeThreshold > 0) {
+          const angleDiff = targetQuaternion.angleTo(scope.lastQuaternion);
+          if (angleDiff < scope.orientationChangeThreshold) {
+            return;
+          }
+        }
+
+        // Apply smoothing if needed
+        if (scope.smoothingFactor < 1 && scope.lastQuaternion) {
+          const t = 1 - scope.smoothingFactor;
+          scope.object.quaternion.slerp(targetQuaternion, t);
+        } else {
+          scope.object.quaternion.copy(targetQuaternion);
+        }
+
+        scope.lastQuaternion = scope.object.quaternion.clone();
+
+        window.dispatchEvent(
+          new CustomEvent("camera-rotation-change", {
+            detail: { cameraRotation: scope.object.rotation },
+          }),
+        );
       }
     };
 
@@ -441,44 +384,6 @@ class DeviceOrientationControls extends EventDispatcher {
         if (heading < 0) heading += 360;
       }
       return heading;
-    };
-
-    this._calcAngleWithThreshold = (a: number, b: number) => {
-      return Math.abs(a - b) < scope.orientationChangeThreshold ? b : a;
-    };
-
-    // NW Added
-    this._orderAngle = (a: number, b: number, range = TWO_PI) => {
-      if (
-        (b > a && Math.abs(b - a) < range / 2) ||
-        (a > b && Math.abs(b - a) > range / 2)
-      ) {
-        return { left: a, right: b };
-      } else {
-        return { left: b, right: a };
-      }
-    };
-
-    // NW Added
-    this._getSmoothedAngle = (
-      a: number,
-      b: number,
-      k: number,
-      range = TWO_PI,
-    ) => {
-      const angles = scope._orderAngle(a, b, range);
-      const angleshift = angles.left;
-      const origAnglesRight = angles.right;
-      angles.left = 0;
-      angles.right -= angleshift;
-      if (angles.right < 0) angles.right += range;
-      let newangle =
-        origAnglesRight == b
-          ? (1 - k) * angles.right + k * angles.left
-          : k * angles.right + (1 - k) * angles.left;
-      newangle += angleshift;
-      if (newangle >= range) newangle -= range;
-      return newangle;
     };
 
     // Provided in fix on issue #466 (main AR.js) - iOS related
