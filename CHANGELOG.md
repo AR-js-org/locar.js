@@ -1,8 +1,16 @@
 # Updates
 
+## `0.1.8` (2025-12-11)
+
+Improve smoothing behaviour, preventing artefacts in certain edge cases, thanks to [Fabian Frank](https://github.com/fabian247) !
+
+## `0.1.7` (2025-12-02)
+
+Full conversion to TypeScript, thanks to [Fabian Frank](https://github.com/fabian247)!
+
 ## `0.1.6` (2025-11-27).
 
-Added option `orientationChangeThreshold` to `LocAR.DeviceOrientationControls` to define a minimal orientation change needed to trigger an update on the `object`. This helps to reduce jittering due to frequent and tiny updates of the device sensors.
+Added option `orientationChangeThreshold` to `LocAR.DeviceOrientationControls` to define a minimal orientation change needed to trigger an update on the `object`. This helps to reduce jittering due to frequent and tiny updates of the device sensors. Thanks to [Fabian Frank](https://github.com/fabian247) for this!
 
 ## `0.1.5` (2025-11-26).
 

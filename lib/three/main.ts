@@ -7,7 +7,7 @@ import Webcam from "./webcam";
 
 export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/Webcam";
 
-const version = "0.1.8-pre1";
+const version = "0.1.8";
 export {
   LocationBased,
   Webcam,
