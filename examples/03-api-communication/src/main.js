@@ -45,8 +45,6 @@ const indexedObjects = { };
 
 const cube = new THREE.BoxGeometry(20, 20, 20);
 
-const clickHandler = new LocAR.ClickHandler(renderer);
-
 locar.on("gpserror", error => {
     alert(`GPS error: code ${error.code}`);
 });
@@ -89,9 +87,5 @@ renderer.setAnimationLoop(animate);
 
 function animate() {
     deviceControls.update();
-    const objects = clickHandler.raycast(camera, scene);
-    if(objects.length) {
-        alert(`This is ${objects[0].object.properties.name}`);
-    }
     renderer.render(scene, camera);
 }
