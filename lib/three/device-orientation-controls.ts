@@ -57,7 +57,7 @@ type DeviceOrientationEventWithCompass = DeviceOrientationEvent & {
   webkitCompassHeading?: number;
 };
 
-type DeviceOrientationControlsOptions = {
+export type DeviceOrientationControlsOptions = {
   smoothingFactor?: number;
   orientationChangeThreshold?: number;
   enablePermissionDialog?: boolean;

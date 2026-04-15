@@ -1,19 +1,29 @@
-import LocationBased from "./location-based";
+import App from "./app";
+import LocAR from "./locar";
 import SphMercProjection from "./sphmerc-projection";
 import DeviceOrientationControls from "./device-orientation-controls";
 import ClickHandler from "./click-handler";
 import EventEmitter from "./event-emitter";
 import Webcam from "./webcam";
 
-export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/Webcam";
+export type { 
+  LonLat, 
+  ServerLogger, 
+  WebcamStartedEvent, 
+  WebcamErrorEvent, 
+  DeviceOrientationErrorEvent, 
+  DeviceOrientationGrantedEvent, 
+  GpsReceivedEvent,
+  ReadyEvent
+} from "../types/locar";
 
-const version = "0.1.8";
+
 export {
-  LocationBased,
+  App,
+  LocAR,
   Webcam,
   SphMercProjection,
   DeviceOrientationControls,
   ClickHandler,
   EventEmitter,
-  version,
 };

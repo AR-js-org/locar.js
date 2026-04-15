@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import EventEmitter from "./event-emitter";
 
-export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/Webcam";
+export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/locar";
 
 /** Class to setup the webcam. */
 class Webcam extends EventEmitter {

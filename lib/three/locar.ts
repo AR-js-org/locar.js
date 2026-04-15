@@ -1,16 +1,15 @@
 import SphMercProjection from "./sphmerc-projection";
 import EventEmitter from "./event-emitter";
 import * as THREE from "three";
-import type { LonLat } from "../types/LonLat";
-import type { ServerLogger } from "../types/ServerLogger";
+import type { LonLat, ServerLogger } from '../types/locar';
 
 export interface GpsOptions {
   gpsMinDistance?: number;
   gpsMinAccuracy?: number;
 }
 
-/** The main class for the LocAR.js system.  */
-class LocationBased extends EventEmitter {
+/** The main engine class for the LocAR.js system.  */
+class LocAR extends EventEmitter {
   scene: THREE.Scene;
   camera: THREE.Camera;
   #proj: SphMercProjection;
@@ -100,7 +99,7 @@ class LocationBased extends EventEmitter {
         (error) => {
           /**
            * GPS error event.
-           * @event LocationBased#gpserror
+           * @event LocAR#gpserror
            * @param {Object} error - the Geolocation API error object.
            */
           this.emit("gpserror", error);
@@ -192,11 +191,11 @@ class LocationBased extends EventEmitter {
     object: THREE.Object3D,
     lon: number,
     lat: number,
-    elev: number | undefined,
+    elev?: number | undefined,
     properties: Record<string, any> = {},
   ) {
     (object as any).properties = properties;
-    this.#setWorldPosition(object, lon, lat, elev);
+    this.#setWorldPosition(object, lon, lat, elev || 0);
     this.scene.add(object);
     this.#serverLogger?.sendData("/object/new", {
       position: object.position,
@@ -285,7 +284,7 @@ class LocationBased extends EventEmitter {
 
         /**
          * GPS update event.
-         * @event LocationBased#gpsupdate
+         * @event LocAR#gpsupdate
          * @param {object} event object containing 'position' -the Geolocation API position object and 'distMoved' - the distance moved in metres since the last GPS update.
          */
         this.emit("gpsupdate", { position, distMoved });
@@ -321,4 +320,6 @@ class LocationBased extends EventEmitter {
   }
 }
 
-export default LocationBased;
+export default LocAR;
+
+
