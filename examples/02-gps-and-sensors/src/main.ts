@@ -57,6 +57,15 @@ app.on("ready", (ev: ReadyEvent) => {
         }
     });
 
+     document.getElementById("setFakeLoc")!.addEventListener("click", e => {
+        alert("Using fake input GPS, not real GPS location");
+        locar.stopGps();
+        locar.fakeGps(
+            parseFloat((document.getElementById("fakeLon") as HTMLInputElement).value),
+            parseFloat((document.getElementById("fakeLat") as HTMLInputElement).value)
+        );
+    });
+
     locar.startGps();
 });
 app.start();
