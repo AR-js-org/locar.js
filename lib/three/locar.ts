@@ -57,6 +57,8 @@ class LocAR extends EventEmitter {
    * taking longitude and latitude as arguments and returning an array
    * containing easting and northing.
    */
+
+  // TODO - should not be SphMercProjection, should be generic Projection
   setProjection(proj: SphMercProjection) {
     this.#proj = proj;
   }
@@ -204,6 +206,78 @@ class LocAR extends EventEmitter {
       session: this.#session,
       properties,
     });
+  }
+
+  addGeoLine(
+    points: Array<[number, number, number?]>,
+    material: THREE.Material,
+    lineWidth: number = 1
+  ) {
+    const projectedLine : THREE.Vector3[] = points.map ( (point => {
+      const [x, z] = this.lonLatToWorldCoords(point[0], point[1]);
+      return new THREE.Vector3(x, point[2] || 0, z);
+    }));
+    const geom = this.#makeWayGeom(projectedLine, lineWidth);
+    material.setValues({ side: THREE.DoubleSide }) 
+    const mesh = new THREE.Mesh(geom, material);
+    this.scene.add(mesh);
+  }
+
+  #makeWayGeom(vertices: THREE.Vector3[], width: number) {
+    let dx, dz, dy, len, dxperp = 0, dzperp = 0, nextVtxProvisional: Array<number> = [], thisVtxProvisional;
+    const k = vertices.length-1;
+    const realVertices = [];
+    for(let i=0; i<k; i++) {
+      dx = vertices[i+1].x - vertices[i].x;
+      dz = vertices[i+1].z - vertices[i].z;
+      dy = vertices[i+1].y - vertices[i].y;
+      len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      dxperp = -(dz * (width/2)) / len;
+      dzperp = dx * (width/2) / len;
+      thisVtxProvisional = [
+        vertices[i].x-dxperp,
+        vertices[i].y,
+        vertices[i].z-dzperp,
+        vertices[i].x+dxperp,
+        vertices[i].y,
+        vertices[i].z+dzperp,
+      ];
+      if(i > 0) {
+        // Ensure the vertex positions are influenced not just by this 
+        // segment but also the previous segment
+        thisVtxProvisional.forEach ((vtx,j)=> {
+          vtx = (vtx + nextVtxProvisional[j]) / 2;
+        });
+      }
+      realVertices.push(...thisVtxProvisional);
+       nextVtxProvisional = [
+        vertices[i+1].x-dxperp,
+        vertices[i+1].y,
+        vertices[i+1].z-dzperp,
+        vertices[i+1].x+dxperp,
+        vertices[i+1].y,
+        vertices[i+1].z+dzperp,
+      ];
+    }
+    realVertices.push(vertices[k].x - dxperp);
+    realVertices.push(vertices[k].y);
+    realVertices.push(vertices[k].z - dzperp);
+    realVertices.push(vertices[k].x + dxperp);
+    realVertices.push(vertices[k].y);
+    realVertices.push(vertices[k].z + dzperp);
+
+    let indices = [];
+    for(let i=0; i<k; i++) {
+      indices.push(i*2, i*2+1, i*2+2);
+      indices.push(i*2+1, i*2+3, i*2+2);
+    }
+
+    let geom = new THREE.BufferGeometry();
+    let bufVertices = new Float32Array(realVertices);
+    geom.setIndex(indices);
+    geom.setAttribute('position', new THREE.BufferAttribute(bufVertices,3));
+    geom.computeBoundingBox();
+    return geom;
   }
 
   #setWorldPosition(
