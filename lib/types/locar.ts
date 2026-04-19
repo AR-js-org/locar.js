@@ -44,8 +44,3 @@ export interface GpsReceivedEvent {
   position: GeolocationPosition;
   distMoved: number;
 }
-
-/** Event emitted when the system is ready to be used (typically when device orientation permissions have been granted, or immediately if device orientation is turned off). */
-export interface ReadyEvent {
-  locar: LocAR;
-}

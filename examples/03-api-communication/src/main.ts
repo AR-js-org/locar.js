@@ -12,9 +12,9 @@ const app = new App({
     canvas: document.getElementById('glscene') as HTMLCanvasElement
 });
 
-app.on("ready", (ev: ReadyEvent) => {
+try {
     let firstPosition = true;
-    const { locar } = ev;
+    const locar = await app.start();
 
     const indexedObjects = new Map<number, THREE.Mesh>();
 
@@ -58,6 +58,7 @@ app.on("ready", (ev: ReadyEvent) => {
 
     locar.startGps();
 
-});
-app.start();
+} catch (e: any) {
+    alert(`${e.code} ${e.message}`);
+}
 

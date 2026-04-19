@@ -8,10 +8,10 @@ const app = new App({
     camera,
     canvas: document.getElementById('glscene') as HTMLCanvasElement,
 });
-app.on("ready", (ev: ReadyEvent) => {
-    let firstLocation = true;
-    const { locar } = ev;
 
+try {
+    let firstLocation = true;
+    const locar = await app.start();
     locar.on("gpserror", (error : GeolocationPositionError) => {
         alert(`GPS error: ${error.code}`);
     });
@@ -67,8 +67,11 @@ app.on("ready", (ev: ReadyEvent) => {
     });
 
     locar.startGps();
-});
-app.start();
+}
+catch(e: any) {
+    alert(`${e.code} ${e.message}`);
+}
+
 
 
 

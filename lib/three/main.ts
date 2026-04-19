@@ -14,7 +14,6 @@ export type {
   DeviceOrientationErrorEvent, 
   DeviceOrientationGrantedEvent, 
   GpsReceivedEvent,
-  ReadyEvent
 } from "../types/locar";
 
 

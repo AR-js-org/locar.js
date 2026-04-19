@@ -17,7 +17,7 @@ export interface AppOptions {
     canvas?: HTMLCanvasElement;
     gpsOptions?: GpsOptions;
     videoConstraints?: { video: { facingMode: string } };
-    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean }; 
+    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean };
 }
 
 /** Application class to orchestrate the interaction between the individual LocAR classes and the Three.js camera, renderer and scene. */
@@ -29,25 +29,25 @@ class App extends EventEmitter {
     webcam: Webcam;
     deviceOrientationControls: DeviceOrientationControls | null;
 
-   /**
-     * Create an App object.
-     * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
-     */
-    constructor({camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions}: AppOptions) {
+    /**
+      * Create an App object.
+      * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
+      */
+    constructor({ camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions }: AppOptions) {
         super();
 
         this.camera = camera;
 
-        if(canvas) {
+        if (canvas) {
             this.renderer = new THREE.WebGLRenderer({ canvas });
-           
+
         } else {
             this.renderer = new THREE.WebGLRenderer();
             document.body.appendChild(this.renderer.domElement);
         }
-            
+
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        
+
         this.scene = new THREE.Scene();
 
         const orientationOptions = deviceOrientationOptions || { enabled: true };
@@ -64,7 +64,7 @@ class App extends EventEmitter {
 
 
         this.deviceOrientationControls = orientationOptions.enabled === true ? new DeviceOrientationControls(camera, orientationOptions) : null;
-    
+
 
         this.renderer.setAnimationLoop(() => {
             this.deviceOrientationControls?.update();
@@ -75,47 +75,54 @@ class App extends EventEmitter {
     /**
      * Start the app.
      * Must be called after construction.
-     * Emits "ready" event as soon as we can start interacting with the app (when device orientation permissions have been granted, or immediately if device orientation turned off).
+     * @returns {Promise<LocAR>}
+     * Promise resolving with LocAR object. Rejects with object containing code and message.
      */
-    start() {
-       
-        this.webcam.on("webcamstarted", (ev: WebcamStartedEvent) => {
-            this.scene.background = ev.texture;
-        });
+    start(): Promise<LocAR> {
 
-        /**
-         * Webcam error event.
-         * @event App#webcamerror
-         * @param {WebcamErrorEvent} event object containing code and message properties.
-         */
-        this.webcam.on("webcamerror", (ev: WebcamErrorEvent) => {
-            this.emit("webcamerror", ev);
-        });
+        const promise = new Promise<LocAR>((resolve, reject) => {
+            this.webcam.on("webcamstarted", (ev: WebcamStartedEvent) => {
+                this.scene.background = ev.texture;
+            });
 
-        if(this.deviceOrientationControls === null) {
-             /**
-              * Ready event.
-              * @event App#ready
-              * @param {ReadyEvent} event object containing LocAR object.
-              */
-             this.emit("ready", { locar: this.locar });
-        } else {
-            this.deviceOrientationControls?.on("deviceorientationgranted", (ev: DeviceOrientationGrantedEvent) => {
-                ev.target.connect();
+            /**
+             * Webcam error event.
+             * @event App#webcamerror
+             * @param {WebcamErrorEvent} event object containing code and message properties.
+             */
+            this.webcam.on("webcamerror", (ev: WebcamErrorEvent) => {
+                reject({ code: ev.code, message: ev.message });
+            });
+
+            if (this.deviceOrientationControls === null) {
                 /**
                  * Ready event.
                  * @event App#ready
                  * @param {ReadyEvent} event object containing LocAR object.
                  */
-                this.emit("ready", { locar: this.locar });
-            });
+            
+                resolve(this.locar);
+            } else {
+                this.deviceOrientationControls?.on("deviceorientationgranted", (ev: DeviceOrientationGrantedEvent) => {
+                    ev.target.connect();
+                    /**
+                     * Ready event.
+                     * @event App#ready
+                     * @param {ReadyEvent} event object containing LocAR object.
+                     */
+                   
+                    resolve(this.locar);
+                });
 
-            this.deviceOrientationControls.on("deviceorientationerror", (ev: DeviceOrientationErrorEvent) => {
-                this.emit("deviceorientationerror", ev);
-            });
+                this.deviceOrientationControls.on("deviceorientationerror", (ev: DeviceOrientationErrorEvent) => {
+                    reject({ code: ev.code, message: ev.message });
+                });
 
-            this.deviceOrientationControls.init();
-        }
+                this.deviceOrientationControls.init();
+            }
+
+        });
+        return promise;
     }
 }
 
