@@ -7,17 +7,21 @@ import {
     DeviceOrientationErrorEvent,
     WebcamStartedEvent,
     WebcamErrorEvent,
+    Projection,
+    ServerLogger
 } from './main';
 import { GpsOptions } from './locar';
 import EventEmitter from './event-emitter';
 import type { DeviceOrientationControlsOptions } from './device-orientation-controls';
 
 export interface AppOptions {
-    camera: THREE.PerspectiveCamera;
-    canvas?: HTMLCanvasElement;
-    gpsOptions?: GpsOptions;
-    videoConstraints?: { video: { facingMode: string } };
-    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean };
+    camera: THREE.PerspectiveCamera; /** the three.js camera to use */
+    canvas?: HTMLCanvasElement; /** the canvas to render the AR scene into (one will be created if omitted) */
+    gpsOptions?: GpsOptions; /** GPS options */
+    videoConstraints?: { video: { facingMode: string } }; /** Video constraints for Media Devices API */
+    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean }; /** Device orientation options for DeviceOrientationControls */
+    projection?: Projection; /** Projection to use (default: SphMercProjection) */
+    serverLogger?: ServerLogger; /** Server logger to use - ensure you gain consent from the user if you are doing this, it's usually a Data Protection legal requirement */
 }
 
 /** Application class to orchestrate the interaction between the individual LocAR classes and the Three.js camera, renderer and scene. */
@@ -33,7 +37,7 @@ class App extends EventEmitter {
       * Create an App object.
       * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
       */
-    constructor({ camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions }: AppOptions) {
+    constructor({ camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
         super();
 
         this.camera = camera;
@@ -58,7 +62,7 @@ class App extends EventEmitter {
             camera.updateProjectionMatrix();
         });
 
-        this.locar = new LocAR(this.scene, camera, gpsOptions);
+        this.locar = new LocAR(this.scene, camera, gpsOptions, serverLogger, projection);
 
         this.webcam = new Webcam(videoConstraints);
 
