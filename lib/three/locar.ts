@@ -1,7 +1,7 @@
 import SphMercProjection from "./sphmerc-projection";
 import EventEmitter from "./event-emitter";
 import * as THREE from "three";
-import type { LonLat, ServerLogger } from '../types/locar';
+import type { LonLat, Projection, ServerLogger } from '../types/locar';
 
 export interface GpsOptions {
   gpsMinDistance?: number;
@@ -12,7 +12,7 @@ export interface GpsOptions {
 class LocAR extends EventEmitter {
   scene: THREE.Scene;
   camera: THREE.Camera;
-  #proj: SphMercProjection;
+  #proj: Projection;
   #lastCoords: LonLat | null;
   #gpsMinDistance: number;
   #gpsMinAccuracy: number;
@@ -35,11 +35,12 @@ class LocAR extends EventEmitter {
     camera: THREE.Camera,
     options: GpsOptions = {},
     serverLogger: ServerLogger | null = null,
+    projection: Projection = new SphMercProjection()
   ) {
     super();
     this.scene = scene;
     this.camera = camera;
-    this.#proj = new SphMercProjection();
+    this.#proj = projection;
     this.#lastCoords = null;
     this.#gpsMinDistance = 0;
     this.#gpsMinAccuracy = 100;
@@ -58,8 +59,7 @@ class LocAR extends EventEmitter {
    * containing easting and northing.
    */
 
-  // TODO - should not be SphMercProjection, should be generic Projection
-  setProjection(proj: SphMercProjection) {
+  setProjection(proj: Projection) {
     this.#proj = proj;
   }
 

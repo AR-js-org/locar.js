@@ -8,6 +8,12 @@ export interface LonLat {
   latitude: number;
 }
 
+/** Projection type. */
+export interface Projection {
+  project: (lon: number, lat: number) => [number, number];
+  unproject: (projected: [number, number]) => [number, number];
+}
+
 /** Server logger interface. */
 export interface ServerLogger {
   sendData(endpoint: string, data: any): Promise<Response> | Response;
