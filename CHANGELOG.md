@@ -1,5 +1,9 @@
 # Updates
 
+## `0.1.9` (2026-04-20)
+
+No new features, but updated dependencies.
+
 ## `0.1.8` (2025-12-11)
 
 Improve smoothing behaviour, preventing artefacts in certain edge cases, thanks to [Fabian Frank](https://github.com/fabian247) !
