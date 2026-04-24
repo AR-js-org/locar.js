@@ -40,13 +40,19 @@ class App extends EventEmitter {
     constructor({ camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
         super();
 
+            
+        const opacity = 0.1;
+
+        console.log("*** pre28")
         this.camera = camera;
 
         if (canvas) {
-            this.renderer = new THREE.WebGLRenderer({ canvas });
+            this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+            this.renderer.setClearColor(0x0000ff, opacity);
 
         } else {
-            this.renderer = new THREE.WebGLRenderer();
+            this.renderer = new THREE.WebGLRenderer({ alpha: true });
+            this.renderer.setClearColor(0x00ff00, opacity);
             document.body.appendChild(this.renderer.domElement);
         }
 
@@ -86,7 +92,7 @@ class App extends EventEmitter {
 
         const promise = new Promise<LocAR>((resolve, reject) => {
             this.webcam.on("webcamstarted", (ev: WebcamStartedEvent) => {
-                this.scene.background = ev.texture;
+             //   this.scene.background = ev.texture;
             });
 
             /**

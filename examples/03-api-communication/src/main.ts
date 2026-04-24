@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { 
     App,
     GpsReceivedEvent,
-    ReadyEvent
  } from 'locar';
 
 const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.001, 1000);
