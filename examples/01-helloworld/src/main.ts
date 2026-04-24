@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { LocAR, App } from 'locar';
+import { App } from 'locar';
 
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.001, 100);

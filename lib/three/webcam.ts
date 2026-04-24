@@ -23,22 +23,25 @@ class Webcam extends EventEmitter {
     videoElementSelector?: string,
   ) {
     super();
+  
     this.sceneWebcam = new THREE.Scene();
     if (!videoElementSelector) {
       this.#video = document.createElement("video");
       this.#video.setAttribute("autoplay", "true");
       this.#video.setAttribute("playsinline", "true");
-      this.#video.style.display = "none";
+    //  this.#video.style.display = "none";
       document.body.appendChild(this.#video);
     } else {
       this.#video = document.querySelector(videoElementSelector);
     }
-    this.texture = this.#video ? new THREE.VideoTexture(this.#video) : null;
+  //  this.texture = this.#video ? new THREE.VideoTexture(this.#video) : null;
+    this.texture = null;
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia(constraints)
         .then((stream) => {
           this.#video?.addEventListener("loadedmetadata", () => {
+            /* don't use???
             this.#video?.setAttribute(
               "width",
               this.#video?.videoWidth.toString() ?? "0",
@@ -47,6 +50,7 @@ class Webcam extends EventEmitter {
               "height",
               this.#video?.videoHeight.toString() ?? "0",
             );
+            */
             this.#video?.play();
             /**
              * Webcam started event.

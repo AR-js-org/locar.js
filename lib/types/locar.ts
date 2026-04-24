@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import DeviceOrientationControls from "../three/device-orientation-controls";
-import LocAR from "../three/locar";
+
 
 /** Longitude and latitude. */
 export interface LonLat {
