@@ -41,14 +41,14 @@ class App extends EventEmitter {
         super();
 
             
-        const opacity = 0.2;
+        const opacity = 0;
 
-        console.log("*** pre29")
+        console.log("*** pre30")
         this.camera = camera;
 
         if (canvas) {
             this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-            this.renderer.setClearColor(0x0000ff, opacity);
+            this.renderer.setClearColor(0x00ff00, opacity);
 
         } else {
             this.renderer = new THREE.WebGLRenderer({ alpha: true });

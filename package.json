@@ -1,6 +1,6 @@
 {
   "name": "locar",
-  "version": "0.2.0-pre29",
+  "version": "0.2.0-pre30",
   "description": "Location-based AR from AR.js.",
   "files": [
     "dist"
