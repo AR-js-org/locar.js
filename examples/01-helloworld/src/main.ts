@@ -9,7 +9,7 @@ try {
     const locar = await app.start();
     locar.fakeGps(-0.72, 51.05);
     const geom = new THREE.BoxGeometry(10, 10, 10);
-    const material = new THREE.MeshBasicMaterial({ color: 0xff00c0 });
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
     const mesh = new THREE.Mesh(geom, material);
     locar.add(mesh, -0.72, 51.0505);
 } catch (e: any) {

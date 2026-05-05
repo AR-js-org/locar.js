@@ -29,7 +29,16 @@ class Webcam extends EventEmitter {
       this.#video = document.createElement("video");
       this.#video.setAttribute("autoplay", "true");
       this.#video.setAttribute("playsinline", "true");
-    //  this.#video.style.display = "none";
+      this.#video.style.cssText += `
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: black;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+	      z-index: -100;  
+      `;
       document.body.appendChild(this.#video);
     } else {
       this.#video = document.querySelector(videoElementSelector);
