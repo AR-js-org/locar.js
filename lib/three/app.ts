@@ -43,7 +43,7 @@ class App extends EventEmitter {
             
         const opacity = 0;
 
-        console.log("*** pre31")
+        console.log("*** pre32")
         this.camera = camera;
 
         if (canvas) {

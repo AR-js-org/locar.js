@@ -322,7 +322,7 @@ class LocAR extends EventEmitter {
           longitude: position.coords.longitude,
         };
       } else {
-        distMoved = this.#haversineDist(this.#lastCoords, position.coords);
+        distMoved = LocAR.haversineDist(this.#lastCoords, position.coords);
       }
       if (distMoved >= this.#gpsMinDistance) {
         this.#lastCoords.longitude = position.coords.longitude;
@@ -371,7 +371,7 @@ class LocAR extends EventEmitter {
    *
    * Taken from original A-Frame AR.js location-based components
    */
-  #haversineDist(src: LonLat, dest: LonLat) {
+  static haversineDist(src: LonLat, dest: LonLat) {
     const dlongitude = THREE.MathUtils.degToRad(dest.longitude - src.longitude);
     const dlatitude = THREE.MathUtils.degToRad(dest.latitude - src.latitude);
 
