@@ -15,7 +15,8 @@ import EventEmitter from './event-emitter';
 import type { DeviceOrientationControlsOptions } from './device-orientation-controls';
 
 export interface AppOptions {
-    camera: THREE.PerspectiveCamera; /** the three.js camera to use */
+    //camera: THREE.PerspectiveCamera; 
+    cameraOptions?: { hFov: number, near: number, far: number }; /** the three.js camera options to use - note however we specify horizontal, not vertical, field of view */
     canvas?: HTMLCanvasElement; /** the canvas to render the AR scene into (one will be created if omitted) */
     gpsOptions?: GpsOptions; /** GPS options */
     videoConstraints?: { video: { facingMode: string } }; /** Video constraints for Media Devices API */
@@ -37,14 +38,17 @@ class App extends EventEmitter {
       * Create an App object.
       * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
       */
-    constructor({ camera, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
+    constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
         super();
 
             
         const opacity = 0;
 
-        console.log("*** pre32")
-        this.camera = camera;
+        console.log("*** pre33")
+        //this.camera = camera;
+
+        const aspect = window.innerWidth / window.innerHeight;
+        this.camera = new THREE.PerspectiveCamera((cameraOptions?.hFov || 80) / aspect, aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
 
         if (canvas) {
             this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
@@ -64,16 +68,16 @@ class App extends EventEmitter {
 
         window.addEventListener("resize", e => {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
         });
 
-        this.locar = new LocAR(this.scene, camera, gpsOptions, serverLogger, projection);
+        this.locar = new LocAR(this.scene, this.camera, gpsOptions, serverLogger, projection);
 
         this.webcam = new Webcam(videoConstraints);
 
 
-        this.deviceOrientationControls = orientationOptions.enabled === true ? new DeviceOrientationControls(camera, orientationOptions) : null;
+        this.deviceOrientationControls = orientationOptions.enabled === true ? new DeviceOrientationControls(this.camera, orientationOptions) : null;
 
 
         this.renderer.setAnimationLoop(() => {

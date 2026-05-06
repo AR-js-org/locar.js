@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { App } from 'locar';
 
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.001, 100);
-const app = new App({ camera });
+const app = new App({ 
+    cameraOptions: { hFov: 80, near: 0.001, far: 1000 }
+});
 
 try {
     const locar = await app.start();

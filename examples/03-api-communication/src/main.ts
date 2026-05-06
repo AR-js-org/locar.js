@@ -7,7 +7,7 @@ import {
 const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.001, 1000);
 
 const app = new App({ 
-    camera,
+    cameraOptions: { hFov: 80, near: 0.001, far: 1000 },
     canvas: document.getElementById('glscene') as HTMLCanvasElement
 });
 
