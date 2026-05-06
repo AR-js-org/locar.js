@@ -135,7 +135,7 @@ class DeviceOrientationControls extends EventDispatcher {
         ? "deviceorientationabsolute"
         : "deviceorientation";
 
-    this.smoothingFactor = options.smoothingFactor || 1;
+    this.smoothingFactor = options.smoothingFactor || 0.2;
     this.enablePermissionDialog = options.enablePermissionDialog ?? true;
     this.enableInlineStyling = options.enableStyling ?? true;
     this.preferConfirmDialog = options.preferConfirmDialog ?? false;
