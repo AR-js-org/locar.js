@@ -7,7 +7,6 @@ export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/locar";
 class Webcam extends EventEmitter {
   #video: HTMLVideoElement | null;
   sceneWebcam: THREE.Scene;
-  texture: THREE.VideoTexture | null;
 
   /**
    * Create a Webcam.
@@ -43,8 +42,7 @@ class Webcam extends EventEmitter {
     } else {
       this.#video = document.querySelector(videoElementSelector);
     }
-  //  this.texture = this.#video ? new THREE.VideoTexture(this.#video) : null;
-    this.texture = null;
+
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia(constraints)
@@ -60,13 +58,13 @@ class Webcam extends EventEmitter {
               this.#video?.videoHeight.toString() ?? "0",
             );
             */
-            this.#video?.play();
+            this.#video!.play();
             /**
              * Webcam started event.
              * @event Webcam#webcamstarted
-             * @param {Object} event object containing 'texture' - the texture the webcam will stream to.
+             * @param {Object} event object containing video width and height.
              */
-            this.emit("webcamstarted", { texture: this.texture });
+            this.emit("webcamstarted", { videoWidth : this.#video!.videoWidth, videoHeight : this.#video!.videoHeight });
           });
           if (this.#video) {
             this.#video.srcObject = stream;
@@ -91,12 +89,8 @@ class Webcam extends EventEmitter {
     }
   }
 
-  /**
-   * Free up the memory associated with the webcam.
-   * Should be called when your application closes.
-   */
-  dispose() {
-    this.texture?.dispose();
+  getVideoDimensions() {
+    return `w ${this.#video!.videoWidth}, h ${this.#video!.videoHeight}`
   }
 }
 

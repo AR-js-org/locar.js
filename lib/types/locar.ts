@@ -25,7 +25,8 @@ export interface Event {
 }
 /** Event emitted when the webcam starts. */
 export interface WebcamStartedEvent {
-  texture: THREE.VideoTexture;
+  videoWidth: number;
+  videoHeight: number;
 }
 
 /** Event emitted when the webcam encounters an error. */
