@@ -1,0 +1,1 @@
+import"./modulepreload-polyfill-B5Qt9EMX.js";import{j as s,B as t,M as c,a as n}from"./locar.es-D9EfJQyM.js";const m=new s({cameraOptions:{hFov:80,near:.001,far:1e3}});try{const a=await m.start();a.fakeGps(-.72,51.05);const e=new t(10,10,10),o=new c({color:16711680}),r=new n(e,o);a.add(r,-.72,51.0505)}catch(a){alert(`Error: ${a.code} ${a.message}`)}

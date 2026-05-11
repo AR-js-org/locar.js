@@ -1,13 +1,6 @@
 {
   "dependencies": {
-<<<<<<< HEAD
-    "aframe": "^1.7.1",
-    "aframe-look-at-component": "^1.0.0",
-    "locar": "0.1.9",
-    "locar-aframe": "0.1.2"
-=======
     "locar": "file:../locar-0.2.0-pre44.tgz"
->>>>>>> dev
   },
   "devDependencies": {
     "vite": "^7.3.2"
