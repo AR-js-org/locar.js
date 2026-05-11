@@ -1,19 +1,18 @@
 import SphMercProjection from "./sphmerc-projection";
 import EventEmitter from "./event-emitter";
 import * as THREE from "three";
-import type { LonLat } from "../types/LonLat";
-import type { ServerLogger } from "../types/ServerLogger";
+import type { LonLat, Projection, ServerLogger } from '../types/locar';
 
 export interface GpsOptions {
   gpsMinDistance?: number;
   gpsMinAccuracy?: number;
 }
 
-/** The main class for the LocAR.js system.  */
-class LocationBased extends EventEmitter {
+/** The main engine class for the LocAR.js system.  */
+class LocAR extends EventEmitter {
   scene: THREE.Scene;
   camera: THREE.Camera;
-  #proj: SphMercProjection;
+  #proj: Projection;
   #lastCoords: LonLat | null;
   #gpsMinDistance: number;
   #gpsMinAccuracy: number;
@@ -36,11 +35,12 @@ class LocationBased extends EventEmitter {
     camera: THREE.Camera,
     options: GpsOptions = {},
     serverLogger: ServerLogger | null = null,
+    projection: Projection = new SphMercProjection()
   ) {
     super();
     this.scene = scene;
     this.camera = camera;
-    this.#proj = new SphMercProjection();
+    this.#proj = projection;
     this.#lastCoords = null;
     this.#gpsMinDistance = 0;
     this.#gpsMinAccuracy = 100;
@@ -58,7 +58,8 @@ class LocationBased extends EventEmitter {
    * taking longitude and latitude as arguments and returning an array
    * containing easting and northing.
    */
-  setProjection(proj: SphMercProjection) {
+
+  setProjection(proj: Projection) {
     this.#proj = proj;
   }
 
@@ -100,7 +101,7 @@ class LocationBased extends EventEmitter {
         (error) => {
           /**
            * GPS error event.
-           * @event LocationBased#gpserror
+           * @event LocAR#gpserror
            * @param {Object} error - the Geolocation API error object.
            */
           this.emit("gpserror", error);
@@ -192,11 +193,11 @@ class LocationBased extends EventEmitter {
     object: THREE.Object3D,
     lon: number,
     lat: number,
-    elev: number | undefined,
+    elev?: number | undefined,
     properties: Record<string, any> = {},
   ) {
     (object as any).properties = properties;
-    this.#setWorldPosition(object, lon, lat, elev);
+    this.#setWorldPosition(object, lon, lat, elev || 0);
     this.scene.add(object);
     this.#serverLogger?.sendData("/object/new", {
       position: object.position,
@@ -205,6 +206,78 @@ class LocationBased extends EventEmitter {
       session: this.#session,
       properties,
     });
+  }
+
+  addGeoLine(
+    points: Array<[number, number, number?]>,
+    material: THREE.Material,
+    lineWidth: number = 1
+  ) {
+    const projectedLine : THREE.Vector3[] = points.map ( (point => {
+      const [x, z] = this.lonLatToWorldCoords(point[0], point[1]);
+      return new THREE.Vector3(x, point[2] || 0, z);
+    }));
+    const geom = this.#makeWayGeom(projectedLine, lineWidth);
+    material.setValues({ side: THREE.DoubleSide }) 
+    const mesh = new THREE.Mesh(geom, material);
+    this.scene.add(mesh);
+  }
+
+  #makeWayGeom(vertices: THREE.Vector3[], width: number) {
+    let dx, dz, dy, len, dxperp = 0, dzperp = 0, nextVtxProvisional: Array<number> = [], thisVtxProvisional;
+    const k = vertices.length-1;
+    const realVertices = [];
+    for(let i=0; i<k; i++) {
+      dx = vertices[i+1].x - vertices[i].x;
+      dz = vertices[i+1].z - vertices[i].z;
+      dy = vertices[i+1].y - vertices[i].y;
+      len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      dxperp = -(dz * (width/2)) / len;
+      dzperp = dx * (width/2) / len;
+      thisVtxProvisional = [
+        vertices[i].x-dxperp,
+        vertices[i].y,
+        vertices[i].z-dzperp,
+        vertices[i].x+dxperp,
+        vertices[i].y,
+        vertices[i].z+dzperp,
+      ];
+      if(i > 0) {
+        // Ensure the vertex positions are influenced not just by this 
+        // segment but also the previous segment
+        thisVtxProvisional.forEach ((vtx,j)=> {
+          vtx = (vtx + nextVtxProvisional[j]) / 2;
+        });
+      }
+      realVertices.push(...thisVtxProvisional);
+       nextVtxProvisional = [
+        vertices[i+1].x-dxperp,
+        vertices[i+1].y,
+        vertices[i+1].z-dzperp,
+        vertices[i+1].x+dxperp,
+        vertices[i+1].y,
+        vertices[i+1].z+dzperp,
+      ];
+    }
+    realVertices.push(vertices[k].x - dxperp);
+    realVertices.push(vertices[k].y);
+    realVertices.push(vertices[k].z - dzperp);
+    realVertices.push(vertices[k].x + dxperp);
+    realVertices.push(vertices[k].y);
+    realVertices.push(vertices[k].z + dzperp);
+
+    let indices = [];
+    for(let i=0; i<k; i++) {
+      indices.push(i*2, i*2+1, i*2+2);
+      indices.push(i*2+1, i*2+3, i*2+2);
+    }
+
+    let geom = new THREE.BufferGeometry();
+    let bufVertices = new Float32Array(realVertices);
+    geom.setIndex(indices);
+    geom.setAttribute('position', new THREE.BufferAttribute(bufVertices,3));
+    geom.computeBoundingBox();
+    return geom;
   }
 
   #setWorldPosition(
@@ -249,7 +322,7 @@ class LocationBased extends EventEmitter {
           longitude: position.coords.longitude,
         };
       } else {
-        distMoved = this.#haversineDist(this.#lastCoords, position.coords);
+        distMoved = LocAR.haversineDist(this.#lastCoords, position.coords);
       }
       if (distMoved >= this.#gpsMinDistance) {
         this.#lastCoords.longitude = position.coords.longitude;
@@ -285,7 +358,7 @@ class LocationBased extends EventEmitter {
 
         /**
          * GPS update event.
-         * @event LocationBased#gpsupdate
+         * @event LocAR#gpsupdate
          * @param {object} event object containing 'position' -the Geolocation API position object and 'distMoved' - the distance moved in metres since the last GPS update.
          */
         this.emit("gpsupdate", { position, distMoved });
@@ -298,7 +371,7 @@ class LocationBased extends EventEmitter {
    *
    * Taken from original A-Frame AR.js location-based components
    */
-  #haversineDist(src: LonLat, dest: LonLat) {
+  static haversineDist(src: LonLat, dest: LonLat) {
     const dlongitude = THREE.MathUtils.degToRad(dest.longitude - src.longitude);
     const dlatitude = THREE.MathUtils.degToRad(dest.latitude - src.latitude);
 
@@ -321,4 +394,6 @@ class LocationBased extends EventEmitter {
   }
 }
 
-export default LocationBased;
+export default LocAR;
+
+

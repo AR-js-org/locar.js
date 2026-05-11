@@ -1,5 +1,7 @@
 /** Class representing a Spherical Mercator projection. */
-class SphMercProjection {
+import { Projection } from '../types/locar';
+
+class SphMercProjection implements Projection {
   EARTH: number;
   HALF_EARTH: number;
   /**
@@ -25,7 +27,7 @@ class SphMercProjection {
    * @param {Array} projected - Two-member array containing easting and northing
    * @return {Array} Two-member array containing longitude and latitude
    */
-  unproject = (projected: [number, number]) => {
+  unproject = (projected: [number, number]) : [number, number] => {
     return [this.#sphMercToLon(projected[0]), this.#sphMercToLat(projected[1])];
   };
 
