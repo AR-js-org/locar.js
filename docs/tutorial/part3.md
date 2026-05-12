@@ -1,142 +1,85 @@
-# Location-based AR.js with LocAR.js
+# Location-based AR.js with LocAR.js 0.2
 
 ## Part 3 - Connecting to a web API 
 
-Having looked at how to use the LocAR.js API, we will now consider an example which connects to a web API providing points of interest. This example does not actually introduce any new AR.js concepts, but shows you how you can work with a web API.
+Having looked at how to use the LocAR.js API, we will now consider an example which connects to a web API providing points of interest. This example does not actually introduce any new LocAR.js concepts, but shows you how you can work with a web API.
 
-```javascript
+```typescript
 import * as THREE from 'three';
-import * as LocAR from 'locar';
+import { 
+    App,
+    GpsReceivedEvent,
+ } from 'locar';
 
-const camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 0.001, 1000);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-const scene = new THREE.Scene();
-
-document.body.appendChild(renderer.domElement);
-
-window.addEventListener("resize", e => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+const app = new App({ 
+    cameraOptions: { hFov: 80, near: 0.001, far: 1000 }
 });
 
-const locar = new LocAR.LocationBased(scene, camera);
+try {
+    let firstPosition = true;
 
-const deviceOrientationControls = new LocAR.DeviceOrientationControls(camera);
+    let lastLonLat: LonLat | null = null;
+    let distSinceUpdate = Number.MAX_VALUE;
+   
+    const locar = await app.start();
 
-deviceOrientationControls.on("deviceorientationgranted", ev => {
-    ev.target.connect();
-});
+    const indexedObjects = new Map<number, THREE.Mesh>();
 
-deviceOrientationControls.on("deviceorientationerror", error => {
-    alert(`Device orientation error: code ${error.code} message ${error.message}`);
-});
+    const cube = new THREE.BoxGeometry(20, 20, 20);
 
-deviceOrientationControls.init();
+    locar.on("gpserror", (error: GeolocationPositionError) => {
+        alert(`GPS error: code ${error.code}`);
+    });
 
-const cam = new LocAR.Webcam({
-    video: {
-        facingMode: "environment"
-    }
-});
+    locar.on("gpsupdate", async(ev: GpsReceivedEvent) => {
 
-cam.on("webcamstarted", ev => {
-    scene.background = ev.texture;
-});
+        const lonLat = new LonLat(
+            ev.position.coords.longitude,
+            ev.position.coords.latitude
+        );
 
-cam.on("webcamerror", error => {
-    alert(`Webcam error: code ${error.code} message ${error.message}`);
-});
+        if(lastLonLat !== null) {
+            distSinceUpdate = LocAR.haversineDist(lonLat, lastLonLat);
+        }    
 
-let firstPosition = true;
+        if(firstPosition || distSinceUpdate > 500) {
+            lastLonLat = lonLat;
 
-const indexedObjects = { };
+            const response = await fetch(`https://hikar.org/webapp/map?bbox=${ev.position.coords.longitude-0.02},${ev.position.coords.latitude-0.02},${ev.position.coords.longitude+0.02},${ev.position.coords.latitude+0.02}&layers=poi&outProj=4326`);
+            const pois = await response.json();
 
-const cube = new THREE.BoxGeometry(20, 20, 20);
+            pois.features.forEach ( (poi: any) => {
+                if(!indexedObjects.get(poi.properties.osm_id)) {
+                    const mesh = new THREE.Mesh(
+                        cube,
+                        new THREE.MeshBasicMaterial({color: 0xff0000})
+                    );                
 
-const clickHandler = new LocAR.ClickHandler(renderer);
+                    locar.add(mesh, poi.geometry.coordinates[0], poi.geometry.coordinates[1], 0, poi.properties);
+                    indexedObjects.set(poi.properties.osm_id, mesh);
+                }
+            });
+            firstPosition = false;
+        } 
+    });
 
-locar.on("gpserror", error => {
-    alert(`GPS error: ${error.code}`);
-});
+    locar.startGps();
 
-locar.on("gpsupdate", async(ev, distMoved) => {
-    
-    if(firstPosition || distMoved > 100) {
-
-        const response = await fetch(`https://hikar.org/webapp/map?bbox=${ev.position.coords.longitude-0.02},${ev.position.coords.latitude-0.02},${ev.position.coords.longitude+0.02},${ev.position.coords.latitude+0.02}&layers=poi&outProj=4326`);
-        const pois = await response.json();
-
-        pois.features.forEach ( poi => {
-            if(!indexedObjects[poi.properties.osm_id]) {
-                const mesh = new THREE.Mesh(
-                    cube,
-                    new THREE.MeshBasicMaterial({color: 0xff0000})
-                );                
-
-                locar.add(
-                    mesh, 
-                    poi.geometry.coordinates[0], 
-                    poi.geometry.coordinates[1]
-                );
-                indexedObjects[poi.properties.osm_id] = mesh;
-            }
-        });
-        firstPosition = false;
-    }
-
-});
-locar.startGps();
-
-renderer.setAnimationLoop(animate);
-
-function animate() {
-    deviceOrientationControls.update();
-    renderer.render(scene, camera);
+} catch (e: any) {
+    alert(`${e.code} ${e.message}`);
 }
-
 ```
 
 How is this working? The key thing is we **handle the `gpsupdate` event** once more.
 
-Here, we trigger a download from a web API when we get the update. As we saw in [Part 2](part2.md), the `gpsupdate` event handler receives the standard position object of the Geolocation API, so that, for example, its `coords` property contains the longitude and latitude. It also takes a second parameter, `distMoved`, representing the distance moved in metres since the last update, which means we only fetch from the server if we have moved a certain distance (100m here). We then download data in a 0.02 x 0.02 degree box centred on our current location from the API at https://hikar.org. This provides [OpenStreetMap](https://openstreetmap.org) POI data, but only for Europe and Turkey due to server capacity constraints. The data is provided as [GeoJSON](https://geojson.org).
+Here, we trigger a download from a web API when we get the update. As we saw in [Part 2](part2.md), the `gpsupdate` event handler receives the standard position object of the Geolocation API, so that, for example, its `coords` property contains the longitude and latitude. We implement some logic to only fetch from the server if we have moved a certain distance since the last update (500m here) by storing the position of the last download in `lastLonLat` and checking the distance between the current position and `lastLonLat` using LocAR's inbuilt `haversineDist()` method. This calculates the distance in metres between two `LonLat` objects. 
+
+We then download data in a 0.02 x 0.02 degree box centred on our current location from the API at https://hikar.org. This provides [OpenStreetMap](https://openstreetmap.org) POI data, but only for Europe and Turkey due to server capacity constraints. The data is provided as [GeoJSON](https://geojson.org).
 
 So having received the data, we simply loop through it and create one `THREE.Mesh` for each POI, adding it at the appropriate location (accessible via the `coordinates` of the `geometry` of each GeoJSON object).
 
 Note the boolean variable `firstPosition` which is set to false as soon as we have fetched the data. This prevents data being continuously downloaded from the server every time we get a position update, as it's set to `false` as soon as data has been downloaded. In a real application you could implement code to download data by tile, so that new data is downloaded whenever you move into a new tile.
 
-### Detecting clicks with raycasting
+We also store our OSM POIs in a `Map` called `indexedObjects`, indexing them with their `osm_id` (unique OpenStreetMap ID). This means that if we download overlapping areas each time we contact the API, the same objects will not be added to our scene twice, as we check `indexedObjects` to ensure that the object with that ID is not already present.
 
-We can add the facility to detect clicks on our AR objects by making use of the three.js *raycaster*. This works by sending a line (ray) from a particular point in a certain direction (here, from the camera into the scene) and detecting intersections with objects. LocAR.js provides the `ClickHandler` class, a wrapper round the inbuilt three.js raycaster, to simplify the code. We create a `ClickHandler` object, passing in the renderer as an argument:
-
-```javascript
-const clickHandler = new LocAR.ClickHandler(renderer);
-```
-
-Before we add our raycasting code, we need to modify our code to add objects to the scene so that the object properties (name, etc) are specified:
-```javascript
-locar.add(
-    mesh, 
-    poi.geometry.coordinates[0], 
-    poi.geometry.coordinates[1],     
-    0, 
-    poi.properties
-);
-```
-Note how we specify two additional arguments when adding the object: the elevation (0; a future tutorial will show you how to add elevation from a Digital Elevation Model) and the POI properties from the GeoJSON. These will be used to display the object name to the user when we do our raycasting below.
-
-We perform the raycasting with the `raycast()` method within our animate function. Here is an example:
-
-```javascript
-function animate() {
-    cam.update();
-    deviceControls.update();
-    const objects = clickHandler.raycast(camera, scene);
-    if(objects.length) {
-        alert(`This is ${objects[0].object.properties.name}`);
-    }
-    renderer.render(scene, camera);
-}
-```
-Note how `raycast()` takes the point to raycast from (the camera) and the object to raycast into (the scene). It returns an array of objects intersected by the ray. We are likely to be interested in only the first (the closest to the camera) so we obtain that using index 0. The object returned has an `object` property representing the AR object we found. The properties we specified when we added the AR object can be obtained via the `properties` property of this object. From these, we obtain the name of the object and display it as an alert box.
+Note that this is not the most efficient way of downloading data from an API. It would be much better to keep track of which boxes of data we have downloaded already, to prevent downloading the same data twice. We can do this using a *tiling system*, which will be explored in a later tutorial.

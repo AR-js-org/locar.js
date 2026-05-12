@@ -1,6 +1,6 @@
 # LocAR.js - Develop a simple Points of Interest app
 
-[LocAR.js](https://github.com/AR-js-org/locar.js) is the new - still in early development - standalone location-based API for AR.js.
+**Updated for LocAR.js 0.2!** *LocAR.js version 0.2 has a new and enhanced API, including an `App` object which abstracts away a lot of the complexity of setting up a LocAR application.*
 
 Here is a series of tutorials taking you through how to use LocAR.js, from the basics to a more advanced example: a simple but working Points of Interest app using a live web API.
 
@@ -15,19 +15,7 @@ You should also have very basic knowledge of [Vite](https://vitejs.dev) and the 
 Here is a sample `package.json` containing three.js and LocAR.js as dependencies, and Vite as a dev dependency.
 
 ```
-{
-  "dependencies": {
-    "three": "^0.169.0",
-    "locar": "^0.0.2"
-  },
-  "devDependencies": {
-    "vite": "^5.4.8"
-  },
-  "scripts": {
-    "dev" : "vite dev",
-    "build": "vite build"
-  }
-}
+
 ```
 As is standard in Vite, you should place your `index.html` inside your project's main directory and the JavaScript source, e.g. `main.js`, inside the `src` directory. You can then, as is normal with Vite, run in dev mode with `npm run dev`, which will start up a dev server on port 5173 and allow you to make live changes to your code which will be updated instantly.
 
