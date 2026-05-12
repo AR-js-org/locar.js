@@ -1,117 +1,90 @@
-# Location-based AR.js with LocAR.js
+# Location-based AR.js with LocAR.js 0.2
 
 ## Part 1 - Hello World!
 
-
 The first part of this tutorial will show you how to create a "hello world" application using LocAR.js. It is assumed you are aware of basic three.js concepts, such as the scene, renderer and camera as well as geometries, materials and meshes. This example will set your location to a "fake" GPS location and add a box a short distance away.
 
-Let's start with the HTML, which is very simple:
+Let's start with the HTML, which is very simple but does include a viewport meta tag and styling for `html` and `body` to ensure that the camera feed occupies the whole screen and no rescaling is attempted:
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-<title>LocAR.js - Hello World</title>
-<script type='module' src='src/main.js'></script>
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1" />
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+}
+</style>
+<title>LocAR.js example 1</title>
+<script type='module' src='src/main.ts'></script>
 </head>
 <body>
 </body>
 </html>
 ```
 
-This example assumes that you have installed LocAR.js via `npm` and are using Vite in dev mode to run the application, as described on the [index page for the tutorial](index.md). We link in our JavaScript source as an ES6 module from `src/main.js`, so this is where you should save your code, as `main.js` inside the `src` directory. Here is the `main.js` code:
+This example assumes that you have installed LocAR.js via `npm` and are using Vite in dev mode to run the application, as described on the [index page for the tutorial](index.md). We link in our JavaScript source as an ES6 module from `src/main.ts`, so this is where you should save your code, as `main.js` inside the `src` directory. Here is the `main.ts` code:
 
-```javascript
+```typescript
 import * as THREE from 'three';
-import * as LocAR from 'locar';
+import { App } from 'locar';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.001, 100);
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 
-window.addEventListener("resize", e => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;    
-    camera.updateProjectionMatrix();
-});
-const box = new THREE.BoxGeometry(2,2,2);
-const cube = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-
-const locar = new LocAR.LocationBased(scene, camera);
-const cam = new LocAR.Webcam({
-    video: {
-        facingMode: "environment"
-    }
+const app = new App({ 
+    cameraOptions: { hFov: 80, near: 0.001, far: 1000 }
 });
 
-cam.on("webcamstarted", ev => {
-    scene.background = ev.texture;
-});
-
-cam.on("webcamerror", error => {
-    alert(`Webcam error: code ${error.code} message ${error.message}`);
-});
-
-locar.fakeGps(-0.72, 51.05);
-locar.add(cube, -0.72, 51.0501);
-
-renderer.setAnimationLoop(animate);
-
-function animate() {
-    renderer.render(scene, camera);
+try {
+    const locar = await app.start();
+    const geom = new THREE.BoxGeometry(10, 10, 10);
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const mesh = new THREE.Mesh(geom, material);
+    locar.add(mesh, -0.72, 51.0505);
+    locar.fakeGps(-0.72, 51.05);
+} catch (e: any) {
+    alert(`Error: ${e.code} ${e.message}`);
 }
-
 ```
 
-Much of this is using standard three.js setup code as described in the [manual](https://threejs.org/docs/index.html#manual/en/introduction/Creating-a-scene); if you do not understand basic three.js concepts such as the scene, camera, and renderer, as well as geometries and meshes, you should read the three.js manual first. 
+In LocAR.js 0.2, there is now an `App` class allowing you to easily setup the application, though you can still use the 0.1 API to setup your three.js scene mannually  if you wish.
 
-As normal, we create a `THREE.Scene`, a `THREE.PerspectiveCamera` and a `THREE.WebGLRenderer` using our canvas. We also handle resizing the window and handle window resize. We then create a box geometry and a mesh using that box geometry.
+So we create an `App` object and pass in the parameters for our three.js camera: the horizontal field of view, the near clip plane and the far clip plane. 
 
-What comes next though is new, and specific to AR.js:
-
-```javascript
-const locar = new LocAR.LocationBased(scene, camera);
-const cam = new LocAR.Webcam({
-    video: {
-        facingMode: "environment"
-    }
+```typescript
+const app = new App({ 
+    cameraOptions: { hFov: 80, near: 0.001, far: 1000 }
 });
 ```
 
-We use two new objects, both part of the LocAR.js API. Firstly `LocAR.LocationBased` is the overall AR.js "manager" object and secondly `LocAR.Webcam` is responsible for initialising the webcam. We need to supply our scene and camera as arguments to `LocAR.LocationBased` and the standard Media Devices API constraints object as an argument to `LocAR.Webcam`. If the constraints omitted, the webcam `video` will be set to a `facingMode` of `environment`, i.e. you see the world around you through the camera, not yourself.
+Internally, these will be used to create a `THREE.PerspectiveCamera`. The `App` object takes many options: see the documentation for more details.
 
-We then move on to setting up event handlers for the `LocAR.Webcam`.
+Using the `App` object, we then initialise the app with its `start()` method. This returns a promise which will be resolved once the app is in a ready state, i..e. the device sensors have been initialised and, on iOS devices, the user has granted permission to use the sensors. This promise resolves with an object of class `LocAR` (note that in 0.1 this class was called `LocationBased`).
 
-```javascript
-cam.on("webcamstarted", ev => {
-    scene.background = ev.texture;
-});
-
-cam.on("webcamerror", error => {
-    alert(`Webcam error: code ${error.code} message ${error.message}`);
-});
+```typescript
+const locar = await app.start();
 ```
 
-You **must** supply a `webcamstarted` event handler. This runs as soon as the webcam feed is initialised. It receives an event handler object containing a `texture` property. This is a `THREE.VideoTexture` which is used to set the background of the scene to the webcam feed.
+We then set a fake GPS of longitude -0.72 and latitude 51.05:
 
-The `webcamerror` event handler allows you to report errors with initialising the webcam to the user.
-
-The `LocAR.Webcam` will, internally, create a `video` element to capture the webcam. Alternatively, if you have a `video` element already set up in your HTML, you can pass its CSS selector into the `Webcam` as an optional argument. For example:
-
-```javascript
-const cam = new LocAR.Webcam({
-    video: {
-        facingMode: "environment"
-    }
-}, '#video1');
+```typescript
+locar.fakeGps(-0.72, 51.05);
 ```
 
-Next we add our box mesh to LocAR. This next line is interesting: 
+We can also use `startGps()` to start listening to the real GPS receiver.
 
-```javascript
-locar.add(box, -0.72, 51.051); 
+We then create a box geometry and a mesh using that box geometry and a red material: this is standard three.js code:
+
+```typescript
+const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const mesh = new THREE.Mesh(geom, material);
+```
+
+and then add it to our `LocAR` object using its `add()` method. This takes three arguments: the mesh to add, the longitude and the latitude.
+
+```typescript
+locar.add(mesh, -0.72, 51.05);
 ```
 
 Rather than setting the box's `position` as we would normally do in standard three.js, we add it to a specific **real-world location** defined by longitude and latitude. The `add()` method of `LocAR.LocationBased` allows us to do that.
@@ -129,42 +102,3 @@ The remaining code is the standard three.js code for defining a rendering functi
 ### Try it!
 
 Try it on either a desktop machine or an Android device running Chrome. On a mobile device or desktop you should see the feed from the webcam, and a red box just in front of you. Note that the mobile device will not yet respond to changes in orientation: we will add that next time. For this reason you *must ensure the box is to your north* as the default view is to face north.
-
-### Faking rotation on a desktop machine
-
-If you do not have a suitable mobile device, you can simulate rotation with the mouse. The code below will do this (add to your main block of code, just before the rendering function):
-
-```javascript
-const rotationStep = THREE.Math.degToRad(2);
-
-let mousedown = false, lastX =0;
-
-window.addEventListener("mousedown", e=> {
-    mousedown = true;
-});
-
-window.addEventListener("mouseup", e=> {
-    mousedown = false;
-});
-
-window.addEventListener("mousemove", e=> {
-    if(!mousedown) return;
-    if(e.clientX < lastX) {
-        camera.rotation.y -= rotationStep;
-        if(camera.rotation.y < 0) {
-            camera.rotation.y += 2 * Math.PI;
-        }
-    } else if (e.clientX > lastX) {
-        camera.rotation.y += rotationStep;
-        if(camera.rotation.y > 2 * Math.PI) {
-            camera.rotation.y -= 2 * Math.PI;
-        }
-    }
-    lastX = e.clientX;
-});
-```
-
-What does this do? Using mouse events, it detects the direction of movement of the mouse when it's pressed down, and in doing so, determines whether to rotate the camera clockwise or anticlockwise. It does this using the `clientX` property of the event object, which contains the mouse X position. This is compared to the previous value of `e.clientX` and from this, we can determine whether we moved the mouse to the left or to the right, and rotate accordingly.
-
-We move the camera by the amount specified in `rotationStep` and ensure that the camera rotation is always within the range 0 to 2PI radians (i.e. 360 degrees).
-
