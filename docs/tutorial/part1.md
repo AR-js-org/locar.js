@@ -25,7 +25,7 @@ html, body {
 </html>
 ```
 
-This example assumes that you have installed LocAR.js via `npm` and are using Vite in dev mode to run the application, as described on the [index page for the tutorial](index.md). We link in our JavaScript source as an ES6 module from `src/main.ts`, so this is where you should save your code, as `main.js` inside the `src` directory. Here is the `main.ts` code:
+This example assumes that you have installed LocAR.js via `npm` and are using Vite in dev mode to run the application, as described on the [index page for the tutorial](index.md). We link in our source as an ES6 module from `src/main.ts`, so this is where you should save your code, as `main.ts` inside the `src` directory. Here is the `main.ts` code:
 
 ```typescript
 import * as THREE from 'three';
