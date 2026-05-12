@@ -87,9 +87,9 @@ and then add it to our `LocAR` object using its `add()` method. This takes three
 locar.add(mesh, -0.72, 51.05);
 ```
 
-Rather than setting the box's `position` as we would normally do in standard three.js, we add it to a specific **real-world location** defined by longitude and latitude. The `add()` method of `LocAR.LocationBased` allows us to do that.
+Rather than setting the box's `position` as we would normally do in standard three.js, we add it to a specific **real-world location** defined by longitude and latitude. The `add()` method of `LocAR` allows us to do that.
 
-Having positioned our box in a specific real-world location, we now need to place **ourselves** (i.e. the camera) at a given real-world location We can do this with `LocAR.LocationBased`s `fakeGps()` method, which takes longitude and latitude as parameters:
+Having positioned our box in a specific real-world location, we now need to place **ourselves** (i.e. the camera) at a given real-world location We can do this with `LocAR`'s `fakeGps()` method, which takes longitude and latitude as parameters:
 
 ```javascript
 arjs.fakeGps(-0.72, 51.05);

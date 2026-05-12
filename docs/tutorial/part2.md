@@ -2,7 +2,7 @@
 
 ## Part 2 - Using real GPS and listening for updates
 
-Having looked at the basics of the LocAR.js API in the first tutorial, we will now look at how to use the real GPS location. Last time, if you remember, we used a "fake" location with the `LocAR.LocationBased`'s `fakeGps() `call.
+Having looked at the basics of the LocAR.js API in the first tutorial, we will now look at how to use the real GPS location. Last time, if you remember, we used a "fake" location with the `LocAR`'s `fakeGps() `call.
 
 ### GPS tracking
 
@@ -85,7 +85,7 @@ We will look at the `gpsupdate` event handler in more detail below. Before that,
 ```
 arjs.startGps();
 ```
-Using the Geolocation API this will make the application start listening for GPS updates. *The nice thing is we do not need to do anything else. The `LocationBased` object automatically updates the camera x and z coordinates to reflect our current GPS location.* Specifically, the GPS latitude and longitude are converted to Spherical Mercator, the sign of `z` reversed (to match the OpenGL coordinate system), and the resulting coordinates used for the camera coordinates.
+Using the Geolocation API this will make the application start listening for GPS updates. *The nice thing is we do not need to do anything else. The `LocAR` object automatically updates the camera x and z coordinates to reflect our current GPS location.* Specifically, the GPS latitude and longitude are converted to Spherical Mercator, the sign of `z` reversed (to match the OpenGL coordinate system), and the resulting coordinates used for the camera coordinates.
 
 ### Adding four boxes to north, south, east and west
 
