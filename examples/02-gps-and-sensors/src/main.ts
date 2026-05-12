@@ -1,9 +1,9 @@
+
 import * as THREE from 'three';
 import { 
     App, GpsReceivedEvent
  } from 'locar';
 
-const camera = new THREE.PerspectiveCamera(80, window.innerWidth / window.innerHeight, 0.001, 100);
 const app = new App({ 
     cameraOptions: { hFov: 80, near: 0.001, far: 1000 },
     canvas: document.getElementById('glscene') as HTMLCanvasElement,
@@ -71,7 +71,4 @@ try {
 catch(e: any) {
     alert(`${e.code} ${e.message}`);
 }
-
-
-
 

@@ -9,7 +9,10 @@ import * as THREE from 'three';
 import { 
     App,
     GpsReceivedEvent,
+    LocAR
  } from 'locar';
+import type { LonLat } from 'locar';
+
 
 const app = new App({ 
     cameraOptions: { hFov: 80, near: 0.001, far: 1000 }
@@ -17,11 +20,10 @@ const app = new App({
 
 try {
     let firstPosition = true;
+    const locar = await app.start();
 
     let lastLonLat: LonLat | null = null;
     let distSinceUpdate = Number.MAX_VALUE;
-   
-    const locar = await app.start();
 
     const indexedObjects = new Map<number, THREE.Mesh>();
 
@@ -31,23 +33,27 @@ try {
         alert(`GPS error: code ${error.code}`);
     });
 
+
     locar.on("gpsupdate", async(ev: GpsReceivedEvent) => {
 
-        const lonLat = new LonLat(
-            ev.position.coords.longitude,
-            ev.position.coords.latitude
-        );
+        const lonLat = {
+            latitude: ev.position.coords.longitude,
+            longitude: ev.position.coords.latitude
+        };
 
         if(lastLonLat !== null) {
             distSinceUpdate = LocAR.haversineDist(lonLat, lastLonLat);
         }    
 
         if(firstPosition || distSinceUpdate > 500) {
+            
+            firstPosition = false;
             lastLonLat = lonLat;
-
+           
+        
             const response = await fetch(`https://hikar.org/webapp/map?bbox=${ev.position.coords.longitude-0.02},${ev.position.coords.latitude-0.02},${ev.position.coords.longitude+0.02},${ev.position.coords.latitude+0.02}&layers=poi&outProj=4326`);
             const pois = await response.json();
-
+        
             pois.features.forEach ( (poi: any) => {
                 if(!indexedObjects.get(poi.properties.osm_id)) {
                     const mesh = new THREE.Mesh(
@@ -59,7 +65,7 @@ try {
                     indexedObjects.set(poi.properties.osm_id, mesh);
                 }
             });
-            firstPosition = false;
+    
         } 
     });
 
