@@ -48,16 +48,7 @@ class Webcam extends EventEmitter {
         .getUserMedia(constraints)
         .then((stream) => {
           this.#video?.addEventListener("loadedmetadata", () => {
-            /* don't use???
-            this.#video?.setAttribute(
-              "width",
-              this.#video?.videoWidth.toString() ?? "0",
-            );
-            this.#video?.setAttribute(
-              "height",
-              this.#video?.videoHeight.toString() ?? "0",
-            );
-            */
+           
             this.#video!.play();
             /**
              * Webcam started event.

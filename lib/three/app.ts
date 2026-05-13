@@ -36,8 +36,6 @@ class App extends EventEmitter {
     cameraFeedDimensions : { landWidth: number, landHeight: number } | null; /** camera feed dimensions in LANDSCAPE  */
     origHfov: number;
 
-    //Port : window 392 677; 480 640
-    //Land: window 785 284; 640 480
     /**
       * Create an App object.
       * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
@@ -47,8 +45,6 @@ class App extends EventEmitter {
         this.origHfov = cameraOptions?.hFov || 80;
 
         const opacity = 0;
-
-        console.log("*** pre44")
         this.cameraFeedDimensions = null;
 
         const aspect = window.innerWidth / window.innerHeight;
