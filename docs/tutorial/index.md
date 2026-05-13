@@ -15,6 +15,18 @@ You should also have very basic knowledge of [Vite](https://vitejs.dev) and the 
 Here is a sample `package.json` containing three.js and LocAR.js as dependencies, and Vite as a dev dependency.
 
 ```
+{
+  "dependencies": {
+    "locar": "^0.2.0"
+  },
+  "devDependencies": {
+    "vite": "^7.3.2"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build"
+  }
+}
 
 ```
 As is standard in Vite, you should place your `index.html` inside your project's main directory and the JavaScript or TypeScript source, e.g. `main.ts`, inside the `src` directory. You can then, as is normal with Vite, run in dev mode with `npm run dev`, which will start up a dev server on port 5173 and allow you to make live changes to your code which will be updated instantly.

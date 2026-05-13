@@ -1,5 +1,21 @@
 # Updates
 
+## `0.2.0` ()
+
+A significant new release with many new features.
+
+**BREAKING CHANGES**:
+
+- `LocationBased` class renamed `LocAR`.
+
+Many other new features, including:
+
+- A new `App` class easing the setup of a LocAR application. `App` will manage the initialisation of the three.js scene, camera and renderer as well as initialising the webcam feed. The tutorial and examples have been rewritten to use `App`. You can, if you wish, continue to manually set up the scene as you would have done in 0.1.x, though note the breaking change above.
+- Webcam feed stretching issue in landscape mode fixed by adding a `video` element with CSS `object-fit` set to `cover`, rather than streaming the feed into a three.js texture.
+- New `addGeoLine()` method of `LocAR` (formerly `LocationBased`), allowing the addition of polylines directly to the scene.
+- Any generic `Projection` can be used for the projection, rather than enforced `SphMercProjection`.
+- Smoothing factor now `0.2` by default; in tests this gives the best results.
+
 ## `0.1.9` (2026-04-20)
 
 No new features, but updated dependencies.
