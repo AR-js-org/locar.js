@@ -1,5 +1,10 @@
 # Updates
 
+## `0.2.1` (2026-05-14)
+
+- Ensure `THREE.PerspectiveCamera.updateProjectionMatrix()` is called in all scenarios when orientation changes.
+- Build docs with `typedoc`.
+
 ## `0.2.0` (2026-05-13)
 
 A significant new release with many new features.
