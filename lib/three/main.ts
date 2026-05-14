@@ -14,7 +14,10 @@ export type {
   DeviceOrientationErrorEvent, 
   DeviceOrientationGrantedEvent, 
   GpsReceivedEvent,
-  Projection
+  Projection,
+  AppOptions,
+  GpsOptions,
+  DeviceOrientationControlsOptions
 } from "../types/locar";
 
 
@@ -25,5 +28,5 @@ export {
   SphMercProjection,
   DeviceOrientationControls,
   ClickHandler,
-  EventEmitter,
+  EventEmitter
 };

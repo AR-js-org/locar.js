@@ -10,20 +10,10 @@ import {
     Projection,
     ServerLogger
 } from './main';
-import { GpsOptions } from './locar';
 import EventEmitter from './event-emitter';
-import type { DeviceOrientationControlsOptions } from './device-orientation-controls';
+import type { AppOptions } from '../types/locar';
 
-export interface AppOptions {
-    //camera: THREE.PerspectiveCamera; 
-    cameraOptions?: { hFov: number, near: number, far: number }; /** the three.js camera options to use - note however we specify horizontal, not vertical, field of view */
-    canvas?: HTMLCanvasElement; /** the canvas to render the AR scene into (one will be created if omitted) */
-    gpsOptions?: GpsOptions; /** GPS options */
-    videoConstraints?: { video: { facingMode: string } }; /** Video constraints for Media Devices API */
-    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean }; /** Device orientation options for DeviceOrientationControls */
-    projection?: Projection; /** Projection to use (default: SphMercProjection) */
-    serverLogger?: ServerLogger; /** Server logger to use - ensure you gain consent from the user if you are doing this, it's usually a Data Protection legal requirement */
-}
+
 
 /** Application class to orchestrate the interaction between the individual LocAR classes and the Three.js camera, renderer and scene. */
 class App extends EventEmitter {
@@ -38,7 +28,7 @@ class App extends EventEmitter {
 
     /**
       * Create an App object.
-      * @param {AppOptions} - Startup options. Must contain "camera", a THREE.PerspectiveCamera.
+      * @param {AppOptions} - Startup options.
       */
     constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
         super();
@@ -123,22 +113,10 @@ class App extends EventEmitter {
             });
 
             if (this.deviceOrientationControls === null) {
-                /**
-                 * Ready event.
-                 * @event App#ready
-                 * @param {ReadyEvent} event object containing LocAR object.
-                 */
-            
                 resolve(this.locar);
             } else {
                 this.deviceOrientationControls?.on("deviceorientationgranted", (ev: DeviceOrientationGrantedEvent) => {
                     ev.target.connect();
-                    /**
-                     * Ready event.
-                     * @event App#ready
-                     * @param {ReadyEvent} event object containing LocAR object.
-                     */
-                   
                     resolve(this.locar);
                 });
 

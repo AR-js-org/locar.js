@@ -36,6 +36,8 @@ import {
   LOCAR_DEVICE_ORIENTATION_PERMISSION_BUTTON_INNER,
 } from "../constants/classes.js";
 
+import type { DeviceOrientationControlsOptions } from "../types/locar";
+
 const LOCAR_DEVICE_ORIENTATION_MESSAGE =
   "This immersive website requires access to your device motion sensors.";
 
@@ -57,13 +59,6 @@ type DeviceOrientationEventWithCompass = DeviceOrientationEvent & {
   webkitCompassHeading?: number;
 };
 
-export type DeviceOrientationControlsOptions = {
-  smoothingFactor?: number;
-  orientationChangeThreshold?: number;
-  enablePermissionDialog?: boolean;
-  enableStyling?: boolean;
-  preferConfirmDialog?: boolean;
-};
 
 class DeviceOrientationControls extends EventDispatcher {
   eventEmitter: EventEmitter;

@@ -1,6 +1,6 @@
 {
   "name": "locar",
-  "version": "0.2.1-pre1",
+  "version": "0.2.1-pre3",
   "description": "Location-based AR from AR.js.",
   "files": [
     "dist"
@@ -20,7 +20,7 @@
     "lint:fix": "prettier --write ./lib && eslint ./lib --ext .js,.json,.css --fix",
     "typecheck": "tsc --noEmit",
     "build": "npm run lint && npm run typecheck && vite build && npm pack",
-    "makedocs": "jsdoc -r lib -d docs/api"
+    "makedocs": "typedoc --out docs/api lib/three/main.ts"
   },
   "devDependencies": {
     "@eslint/css": "^0.11.0",
@@ -29,7 +29,7 @@
     "@types/three": "^0.181.0",
     "eslint": "^9.38.0",
     "globals": "^16.4.0",
-    "jsdoc": "^4.0.4",
+    "typedoc": "^0.28.19",
     "minimatch": "^9.0.7",
     "prettier-eslint": "^16.4.2",
     "typescript": "^5.9.3",

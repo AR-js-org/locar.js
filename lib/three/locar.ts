@@ -1,14 +1,14 @@
 import SphMercProjection from "./sphmerc-projection";
 import EventEmitter from "./event-emitter";
 import * as THREE from "three";
-import type { LonLat, Projection, ServerLogger } from '../types/locar';
+import type { LonLat, Projection, ServerLogger, GpsOptions } from '../types/locar';
 
-export interface GpsOptions {
-  gpsMinDistance?: number;
-  gpsMinAccuracy?: number;
-}
 
-/** The main engine class for the LocAR.js system.  */
+
+/** The main engine class for the LocAR.js system. 
+ * Can be obtained either via App.start() - which resolves with a LocAR object - or on its own.
+ * If you use this class without App, you must set up the three.js scene yourself, as you did with locar.js 0.1.x.
+ */
 class LocAR extends EventEmitter {
   scene: THREE.Scene;
   camera: THREE.Camera;
