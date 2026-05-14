@@ -110,6 +110,7 @@ class App extends EventEmitter {
               };
               
               this.#setActualFov(ev.videoWidth, ev.videoHeight, window.innerWidth / window.innerHeight);
+              this.camera.updateProjectionMatrix();
             });
 
             /**
@@ -169,7 +170,6 @@ class App extends EventEmitter {
 
           // Three camera uses vertical, not horizontal, fov
           this.camera.fov = curHfov / aspectScreen;
-          this.camera.updateProjectionMatrix();
         } else {
           this.camera.fov = this.origHfov / aspectScreen;
         }
