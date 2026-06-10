@@ -212,7 +212,7 @@ class LocAR extends EventEmitter {
     points: Array<[number, number, number?]>,
     material: THREE.Material,
     lineWidth: number = 1
-  ) {
+  ) : THREE.Mesh {
     const projectedLine : THREE.Vector3[] = points.map ( (point => {
       const [x, z] = this.lonLatToWorldCoords(point[0], point[1]);
       return new THREE.Vector3(x, point[2] || 0, z);
@@ -221,6 +221,7 @@ class LocAR extends EventEmitter {
     material.setValues({ side: THREE.DoubleSide }) 
     const mesh = new THREE.Mesh(geom, material);
     this.scene.add(mesh);
+    return mesh;
   }
 
   #makeWayGeom(vertices: THREE.Vector3[], width: number) {

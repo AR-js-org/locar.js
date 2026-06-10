@@ -1,5 +1,9 @@
 # Updates
 
+## `0.2.2` (2026-06-10)
+
+- Return the `THREE.Mesh` created by `LocAR.addGeoLine()`, so that it can, for example, be added to a list of cached objects.
+
 ## `0.2.1` (2026-05-14)
 
 - Ensure `THREE.PerspectiveCamera.updateProjectionMatrix()` is called in all scenarios when orientation changes.

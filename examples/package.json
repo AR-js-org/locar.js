@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "locar": "0.2.1"
+    "locar": "0.2.2"
   },
   "devDependencies": {
     "vite": "^7.3.2"
