@@ -1,9 +1,15 @@
 {
   "dependencies": {
-    "locar": "0.2.2"
+    "locar": "0.2.3"
   },
   "devDependencies": {
-    "vite": "^7.3.2"
+    "esbuild": "^0.28.1",
+    "vite": "^8.0.16"
+  },
+  "overrides": {
+    "vite" : { 
+      "esbuild" : "$esbuild"
+    }
   },
   "scripts": {
     "dev": "vite dev",

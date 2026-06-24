@@ -170,7 +170,22 @@ class LocAR extends EventEmitter {
    */
   lonLatToWorldCoords(lon: number, lat: number) {
     const projectedPos = this.#proj.project(lon, lat);
-    if (this.#initialPosition) {
+    return this.eastNorthToWorldCoords(projectedPos);
+  }
+
+   /**
+   * Convert projected east/north coordinates to three.js/WebGL world coordinates.
+   * Negates the northing (in typical projections, northings increase northwards,
+   * but in the WebGL coordinate system, we face negative z if the camera is at 
+   * the origin with default rotation).
+   * Must not be called until an initial position is determined.
+   * It is assumed that the projected position is in the correct projection - no check
+   * for this is made.
+   * @param {Array} projectedPos - the projected position.
+   * @return {Array} a two member array containing the WebGL x and z coordinates
+   */
+  eastNorthToWorldCoords(projectedPos: [number, number]) : [number, number] {
+     if (this.#initialPosition) {
       projectedPos[0] -= this.#initialPosition[0];
       projectedPos[1] -= this.#initialPosition[1];
     } else {
@@ -393,6 +408,7 @@ class LocAR extends EventEmitter {
   getLastKnownLocation() {
     return this.#lastCoords;
   }
+   
 }
 
 export default LocAR;

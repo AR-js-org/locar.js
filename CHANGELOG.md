@@ -1,5 +1,9 @@
 # Updates
 
+## `0.2.3` (2026-06-24)
+
+- Add `eastNorthToWorldCoords()` method to `LocAR` to convert eastings and northings to WebGL world coordinates, accounting for the original origin and the negation of `z`.
+
 ## `0.2.2` (2026-06-10)
 
 - Return the `THREE.Mesh` created by `LocAR.addGeoLine()`, so that it can, for example, be added to a list of cached objects.

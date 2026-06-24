@@ -1,1 +1,0 @@
-import"./modulepreload-polyfill-B5Qt9EMX.js";window.addEventListener("deviceorientationabsolute",a=>{document.getElementById("devorient").innerHTML=`Alpha: ${Math.floor(a.alpha)}<br />Beta: ${Math.floor(a.beta)}<br />Gamma: ${Math.floor(a.gamma)}`});
