@@ -8,7 +8,7 @@ It is expected that you have some understanding of the absolute basics of [three
 
 You should also have very basic knowledge of [Vite](https://vitejs.dev) and the concept of JavaScript or TypeScript build tools and bundling. Vite is a build and development tool which, as well as bundling your code for production, provides a development server allowing you to develop client-side web apps "live" so that when you make a change to your code or its dependencies, your code is reloaded and changes appear instantly. See the Vite docs for more.
 
-**Do note that it is not recommended to use Firefox on a mobile device due to limitations of the device orientation API. Chrome on Android is recommended.**
+**Do note that it is not recommended to use Firefox on a mobile device due to limitations of the device orientation API. Chrome on Android or iOS or Safari on iOS is recommended.**
 
 ## Installing and developing
 

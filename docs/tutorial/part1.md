@@ -48,7 +48,7 @@ try {
 }
 ```
 
-In LocAR.js 0.2, there is now an `App` class allowing you to easily setup the application, though you can still use the 0.1 API to setup your three.js scene mannually  if you wish.
+In LocAR.js 0.2, there is now an `App` class allowing you to easily setup the application, though you can still use the 0.1 API to setup your three.js scene manually  if you wish.
 
 So we create an `App` object and pass in the parameters for our three.js camera: the horizontal field of view, the near clip plane and the far clip plane. 
 
@@ -89,7 +89,7 @@ locar.add(mesh, -0.72, 51.05);
 
 Rather than setting the box's `position` as we would normally do in standard three.js, we add it to a specific **real-world location** defined by longitude and latitude. The `add()` method of `LocAR` allows us to do that.
 
-Having positioned our box in a specific real-world location, we now need to place **ourselves** (i.e. the camera) at a given real-world location We can do this with `LocAR`'s `fakeGps()` method, which takes longitude and latitude as parameters:
+Having positioned our box in a specific real-world location, we now need to place **ourselves** (i.e. the camera) at a given real-world location. We can do this with `LocAR`'s `fakeGps()` method, which takes longitude and latitude as parameters:
 
 ```javascript
 arjs.fakeGps(-0.72, 51.05);
@@ -101,4 +101,4 @@ The remaining code is the standard three.js code for defining a rendering functi
 
 ### Try it!
 
-Try it on either a desktop machine or an Android device running Chrome. On a mobile device or desktop you should see the feed from the webcam, and a red box just in front of you. Note that the mobile device will not yet respond to changes in orientation: we will add that next time. For this reason you *must ensure the box is to your north* as the default view is to face north.
+Try it on either a desktop machine or an Android device running Chrome. On a mobile device you should see the feed from the webcam, and a red box just in front of you when you face north. On a desktop you will see the red box in the centre of the screen; desktops typically do not have sensors so the scene will be "locked" into facing north.
