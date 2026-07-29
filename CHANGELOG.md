@@ -1,9 +1,9 @@
 # Updates
 
-## `0.2.4` (2026-07-29)
+## `0.2.5` (2026-07-29)
 
 - Clean up the video stream of `Webcam` correctly via a new `dispose()` method (thanks @coopbri for suggesting this via RDK updates)
-- Update various dependencies
+- Update various dependencies, but not `vite-plugin-dts` as version 5 appears to have many breaking changes. Patch the `brace-expansion` vulnerability to avoid having to upgrade for now.
 
 ## `0.2.3` (2026-06-24)
 

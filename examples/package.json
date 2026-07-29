@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "locar": "0.2.4"
+    "locar": "0.2.5"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",
