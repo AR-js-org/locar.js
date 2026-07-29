@@ -6,6 +6,7 @@ export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/locar";
 /** Class to setup the webcam. */
 class Webcam extends EventEmitter {
   #video: HTMLVideoElement | null;
+  #stream: MediaStream | null;
   sceneWebcam: THREE.Scene;
 
   /**
@@ -22,7 +23,7 @@ class Webcam extends EventEmitter {
     videoElementSelector?: string,
   ) {
     super();
-  
+
     this.sceneWebcam = new THREE.Scene();
     if (!videoElementSelector) {
       this.#video = document.createElement("video");
@@ -43,19 +44,22 @@ class Webcam extends EventEmitter {
       this.#video = document.querySelector(videoElementSelector);
     }
 
+    this.#stream = null;
+
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices
         .getUserMedia(constraints)
         .then((stream) => {
+          this.#stream = stream;
           this.#video?.addEventListener("loadedmetadata", () => {
-           
+
             this.#video!.play();
             /**
              * Webcam started event.
              * @event Webcam#webcamstarted
              * @param {Object} event object containing video width and height.
              */
-            this.emit("webcamstarted", { videoWidth : this.#video!.videoWidth, videoHeight : this.#video!.videoHeight });
+            this.emit("webcamstarted", { videoWidth: this.#video!.videoWidth, videoHeight: this.#video!.videoHeight });
           });
           if (this.#video) {
             this.#video.srcObject = stream;
@@ -82,6 +86,19 @@ class Webcam extends EventEmitter {
 
   getVideoDimensions() {
     return `w ${this.#video!.videoWidth}, h ${this.#video!.videoHeight}`
+  }
+
+  /**
+   * Free up the resources associated with the Webcam.
+   */
+  dispose() {
+    (this.#stream?.getTracks() ?? []).forEach(track => {
+      track.stop();
+    })
+    this.#stream = null;
+
+    this.#video?.remove();
+    this.#video = null;
   }
 }
 

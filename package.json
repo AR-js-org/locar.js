@@ -1,6 +1,6 @@
 {
   "name": "locar",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Location-based AR from AR.js.",
   "files": [
     "dist"
@@ -23,30 +23,20 @@
     "makedocs": "typedoc --out docs/api lib/three/main.ts"
   },
   "devDependencies": {
-    "@eslint/css": "^0.11.0",
-    "@eslint/js": "^9.35.0",
-    "@eslint/json": "^0.13.2",
+    "@eslint/css": "^1.4.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^2.0.1",
     "@types/three": "^0.181.0",
     "esbuild":"^0.28.1",
-    "eslint": "^9.38.0",
+    "eslint": "^10.8.0",
     "globals": "^16.4.0",
-    "typedoc": "^0.28.19",
-    "minimatch": "^9.0.7",
-    "prettier-eslint": "^16.4.2",
+    "typedoc": "^0.28.20",
+    "prettier-eslint": "^17.1.1",
     "typescript": "^5.9.3",
-    "vite": "^8.0.16",
-    "vite-plugin-dts": "^4.5.4"
+    "vite": "^8.1.5",
+    "vite-plugin-dts": "^5.0.3"
   },
   "dependencies": {
-    "minimatch": "^9.0.7",
-    "three": "^0.180.0"
-  },
-  "overrides" : {
-    "prettier-eslint": {
-      "minimatch": "$minimatch"
-    },
-    "vite": {
-      "esbuild": "$esbuild"
-    }
+    "three": "^0.181.0"
   }
 }

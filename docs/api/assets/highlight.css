@@ -54,4 +54,4 @@
 .hl-2 { color: var(--hl-2); }
 .hl-3 { color: var(--hl-3); }
 .hl-4 { color: var(--hl-4); }
-pre, code { background: var(--code-background); }
+pre, code, math[display='block'] { background: var(--code-background); }

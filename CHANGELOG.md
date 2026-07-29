@@ -1,5 +1,10 @@
 # Updates
 
+## `0.2.4` (2026-07-29)
+
+- Clean up the video stream of `Webcam` correctly via a new `dispose()` method (thanks @coopbri for suggesting this via RDK updates)
+- Update various dependencies
+
 ## `0.2.3` (2026-06-24)
 
 - Add `eastNorthToWorldCoords()` method to `LocAR` to convert eastings and northings to WebGL world coordinates, accounting for the original origin and the negation of `z`.
