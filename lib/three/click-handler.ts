@@ -17,9 +17,10 @@ class ClickHandler {
     this.raycaster = new THREE.Raycaster();
     this.normalisedMousePosition = null;
     renderer.domElement.addEventListener("click", (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
       this.normalisedMousePosition = new THREE.Vector2(
-        (e.clientX / renderer.domElement.clientWidth) * 2 - 1,
-        -((e.clientY / renderer.domElement.clientHeight) * 2) + 1,
+        ((e.clientX - rect.left) / renderer.domElement.clientWidth) * 2 - 1,
+        -(((e.clientY - rect.top) / renderer.domElement.clientHeight) * 2) + 1,
       );
     });
   }

@@ -7,8 +7,7 @@ import {
     DeviceOrientationErrorEvent,
     WebcamStartedEvent,
     WebcamErrorEvent,
-    Projection,
-    ServerLogger
+    ClickHandler
 } from './main';
 import EventEmitter from './event-emitter';
 import type { AppOptions } from '../types/locar';
@@ -23,8 +22,9 @@ class App extends EventEmitter {
     scene: THREE.Scene;
     webcam: Webcam;
     deviceOrientationControls: DeviceOrientationControls | null;
-    cameraFeedDimensions : { landWidth: number, landHeight: number } | null; /** camera feed dimensions in LANDSCAPE  */
+    cameraFeedDimensions: { landWidth: number, landHeight: number } | null; /** camera feed dimensions in LANDSCAPE  */
     origHfov: number;
+    #clickHandler: ClickHandler | null;
 
     /**
       * Create an App object.
@@ -58,13 +58,13 @@ class App extends EventEmitter {
 
         window.addEventListener("resize", () => {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-          
-            const aspectScreen  = window.innerWidth / window.innerHeight;
+
+            const aspectScreen = window.innerWidth / window.innerHeight;
             this.camera.aspect = aspectScreen;
-            if(this.cameraFeedDimensions !== null) {
-              const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
-              const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
-              this.#setActualFov(videoWidth, videoHeight, aspectScreen);
+            if (this.cameraFeedDimensions !== null) {
+                const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
+                const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
+                this.#setActualFov(videoWidth, videoHeight, aspectScreen);
             }
             this.camera.updateProjectionMatrix();
         });
@@ -79,7 +79,20 @@ class App extends EventEmitter {
         this.renderer.setAnimationLoop(() => {
             this.deviceOrientationControls?.update();
             this.renderer.render(this.scene, this.camera);
+
+            const objects = this.#clickHandler?.raycast(this.camera, this.scene) ?? [];
+
+            if (objects.length > 0) {
+                /**
+                 * Objects intersected event (from click handler/raycaster)
+                 * @event LocAR#objectsIntersected
+                 * @param {object} event object containing 'intersections' - THREE.Intersection[] array containing all intersections
+                 */
+                this.emit("objectsIntersected", { intersections: objects });
+            }
         });
+
+        this.#clickHandler = null;
     }
 
     /**
@@ -92,15 +105,15 @@ class App extends EventEmitter {
 
         const promise = new Promise<LocAR>((resolve, reject) => {
             this.webcam.on("webcamstarted", (ev: WebcamStartedEvent) => {
-              // Store the camera feed dimensions in LANDSCAPE mode (even if original orientation was portrait)
-              const isLand = ev.videoWidth > ev.videoHeight;
-              this.cameraFeedDimensions = {
-                landWidth: isLand ? ev.videoWidth : ev.videoHeight,
-                landHeight: isLand ? ev.videoHeight : ev.videoWidth
-              };
-              
-              this.#setActualFov(ev.videoWidth, ev.videoHeight, window.innerWidth / window.innerHeight);
-              this.camera.updateProjectionMatrix();
+                // Store the camera feed dimensions in LANDSCAPE mode (even if original orientation was portrait)
+                const isLand = ev.videoWidth > ev.videoHeight;
+                this.cameraFeedDimensions = {
+                    landWidth: isLand ? ev.videoWidth : ev.videoHeight,
+                    landHeight: isLand ? ev.videoHeight : ev.videoWidth
+                };
+
+                this.#setActualFov(ev.videoWidth, ev.videoHeight, window.innerWidth / window.innerHeight);
+                this.camera.updateProjectionMatrix();
             });
 
             /**
@@ -131,26 +144,39 @@ class App extends EventEmitter {
         return promise;
     }
 
-    #setActualFov(videoWidth: number, videoHeight: number, aspectScreen: number)  {
+    #setActualFov(videoWidth: number, videoHeight: number, aspectScreen: number) {
         const aspectVideo = videoWidth / videoHeight;
 
         // If the screen aspect ratio is less than the camera feed aspect ratio, only part of the camera feed horizontally
         // will be visible, so the hfov of the visible world will be less than the hfov of the camera. So the
         // hfov of the rendered content needs to be adjusted to match.
-        if(aspectScreen < aspectVideo) {
-          // In this case the video will be scaled to touch the bottom of the screen vertically.
-          // So it's scaled by a factor of screenHeight/videoHeight
-          // To get the video width after scaling (including the off-screen part), we multiply the original width by this factor.
-          const scaledVideoWidth = videoWidth * (window.innerHeight / videoHeight);
+        if (aspectScreen < aspectVideo) {
+            // In this case the video will be scaled to touch the bottom of the screen vertically.
+            // So it's scaled by a factor of screenHeight/videoHeight
+            // To get the video width after scaling (including the off-screen part), we multiply the original width by this factor.
+            const scaledVideoWidth = videoWidth * (window.innerHeight / videoHeight);
 
-          // the fov thus needs to be adjusted by the window width divided by this scaled camera width
-          const curHfov = this.origHfov * (window.innerWidth / scaledVideoWidth);
+            // the fov thus needs to be adjusted by the window width divided by this scaled camera width
+            const curHfov = this.origHfov * (window.innerWidth / scaledVideoWidth);
 
-          // Three camera uses vertical, not horizontal, fov
-          this.camera.fov = curHfov / aspectScreen;
+            // Three camera uses vertical, not horizontal, fov
+            this.camera.fov = curHfov / aspectScreen;
         } else {
-          this.camera.fov = this.origHfov / aspectScreen;
+            this.camera.fov = this.origHfov / aspectScreen;
         }
+    }
+
+    /**
+    * Add an event handler.
+    * Overridden from EventEmitter to create a ClickHandler for objectsIntersected event.
+    * @param {string} eventName - the event to handle.
+    * @param {Function} eventHandler - the event handler function.
+    */
+    on(eventName: string, eventHandler: (...args: any[]) => void) {
+        if (eventName == "objectsIntersected" && this.#clickHandler === null) {
+            this.#clickHandler = new ClickHandler(this.renderer);
+        }
+        super.on(eventName, eventHandler);
     }
 }
 

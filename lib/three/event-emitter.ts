@@ -11,7 +11,7 @@ class EventEmitter {
    * @param {string} eventName - the event to handle.
    * @param {Function} eventHandler - the event handler function.
    */
-  on = (eventName: string, eventHandler: (...args: any[]) => void) => {
+  on(eventName: string, eventHandler: (...args: any[]) => void) {
     if (this.eventHandlers[eventName] === undefined) {
       this.eventHandlers[eventName] = [];
     }

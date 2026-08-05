@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { 
+import {
     App,
     GpsReceivedEvent,
     LocAR
- } from 'locar';
+} from 'locar';
 import type { LonLat } from 'locar';
 
 
-const app = new App({ 
+const app = new App({
     cameraOptions: { hFov: 80, near: 0.001, far: 1000 },
     canvas: document.getElementById('glscene') as HTMLCanvasElement
 });
@@ -28,39 +28,39 @@ try {
     });
 
 
-    locar.on("gpsupdate", async(ev: GpsReceivedEvent) => {
+    locar.on("gpsupdate", async (ev: GpsReceivedEvent) => {
 
         const lonLat = {
             latitude: ev.position.coords.longitude,
             longitude: ev.position.coords.latitude
         };
 
-        if(lastLonLat !== null) {
+        if (lastLonLat !== null) {
             distSinceUpdate = LocAR.haversineDist(lonLat, lastLonLat);
-        }    
+        }
 
-        if(firstPosition || distSinceUpdate > 500) {
-            
+        if (firstPosition || distSinceUpdate > 500) {
+
             firstPosition = false;
             lastLonLat = lonLat;
-           
-        
-            const response = await fetch(`https://hikar.org/webapp/map?bbox=${ev.position.coords.longitude-0.02},${ev.position.coords.latitude-0.02},${ev.position.coords.longitude+0.02},${ev.position.coords.latitude+0.02}&layers=poi&outProj=4326`);
+
+
+            const response = await fetch(`https://hikar.org/webapp/map?bbox=${ev.position.coords.longitude - 0.02},${ev.position.coords.latitude - 0.02},${ev.position.coords.longitude + 0.02},${ev.position.coords.latitude + 0.02}&layers=poi&outProj=4326`);
             const pois = await response.json();
-        
-            pois.features.forEach ( (poi: any) => {
-                if(!indexedObjects.get(poi.properties.osm_id)) {
+
+            pois.features.forEach((poi: any) => {
+                if (!indexedObjects.get(poi.properties.osm_id)) {
                     const mesh = new THREE.Mesh(
                         cube,
-                        new THREE.MeshBasicMaterial({color: 0xff0000})
-                    );                
+                        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+                    );
 
                     locar.add(mesh, poi.geometry.coordinates[0], poi.geometry.coordinates[1], 0, poi.properties);
                     indexedObjects.set(poi.properties.osm_id, mesh);
                 }
             });
-    
-        } 
+
+        }
     });
 
     document.getElementById("setFakeLoc")!.addEventListener("click", e => {
