@@ -13,6 +13,7 @@ const app = new App({
 });
 
 try {
+
     let firstPosition = true;
     const locar = await app.start();
 

@@ -1,5 +1,6 @@
 
 import DeviceOrientationControls from "../three/device-orientation-controls";
+import * as THREE from 'three';
 
 
 /** Longitude and latitude. */
@@ -21,7 +22,7 @@ export interface ServerLogger {
 
 /** Generic event. */
 export interface Event {
-  
+
 }
 /** Event emitted when the webcam starts. */
 export interface WebcamStartedEvent {
@@ -74,22 +75,41 @@ export type DeviceOrientationControlsOptions = {
   preferConfirmDialog?: boolean;
 };
 
+/** Interface representing existing three.js objects if you want to pass them in from elsewhere (e.g. react-three-fiber) */
+export interface ThreeObjects {
+  /** the three.js camera */
+  camera: THREE.PerspectiveCamera;
+  /** the three.js renderer */
+  renderer: THREE.WebGLRenderer;
+  /** the three.js scene */
+  scene: THREE.Scene;
+}
 
-/** Options to pass into the App object. */
-export interface AppOptions {
-    //camera: THREE.PerspectiveCamera; 
-    /** the three.js camera options to use - note however we specify horizontal, not vertical, field of view */
-    cameraOptions?: { hFov: number, near: number, far: number }; 
-    /** the canvas to render the AR scene into (one will be created if omitted) */
-    canvas?: HTMLCanvasElement; 
-    /** GPS options, see GpsOptions documentation for details */
-    gpsOptions?: GpsOptions; 
-    /** Video constraints for Media Devices API */
-    videoConstraints?: { video: { facingMode: string } }; 
-    /** Device orientation options for DeviceOrientationControls */
-    deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean }; 
-    /** Projection to use (default: SphMercProjection) */
-    projection?: Projection; 
-     /** Server logger to use - ensure you gain consent from the user if you are doing this, it's usually a Data Protection legal requirement */
-    serverLogger?: ServerLogger;
+/** Basic options to pass into the App object, excluding options specific to configuring three.js. 
+ * If you already have three.js camera, scene and renderer objects set up (e.g. via react-three-fiber), you can just pass 
+ * in BasicAppOptions to App.
+ */
+
+export interface BasicAppOptions {
+  /** GPS options, see GpsOptions documentation for details */
+  gpsOptions?: GpsOptions;
+  /** Video constraints for Media Devices API */
+  videoConstraints?: { video: { facingMode: string } };
+  /** Device orientation options for DeviceOrientationControls */
+  deviceOrientationOptions?: DeviceOrientationControlsOptions & { enabled: boolean };
+  /** Projection to use (default: SphMercProjection) */
+  projection?: Projection;
+  /** Server logger to use - ensure you gain consent from the user if you are doing this, it's usually a Data Protection legal requirement */
+  serverLogger?: ServerLogger;
+  /** Existing three.js objects, set up elsewhere - e.g. react-three-fiber */
+  threeObjects?: ThreeObjects;
+  
+}
+
+/** Full options including three.js configuration options. */
+export interface AppOptions extends BasicAppOptions {
+  /** the three.js camera options to use - note however we specify horizontal, not vertical, field of view */
+  cameraOptions?: { hFov: number, near: number, far: number };
+  /** the canvas to render the AR scene into (one will be created if omitted) */
+  canvas?: HTMLCanvasElement;
 }

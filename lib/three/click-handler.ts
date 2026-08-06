@@ -36,7 +36,7 @@ class ClickHandler {
   raycast(camera: THREE.Camera, scene: THREE.Scene): THREE.Intersection[] {
     if (this.normalisedMousePosition !== null) {
       this.raycaster.setFromCamera(this.normalisedMousePosition, camera);
-      const objects = this.raycaster.intersectObjects(scene.children, false);
+      const objects = this.raycaster.intersectObjects(scene.children, true);
       this.normalisedMousePosition = null;
       return objects;
     }

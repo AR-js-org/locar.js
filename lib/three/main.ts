@@ -16,8 +16,11 @@ export type {
   GpsReceivedEvent,
   Projection,
   AppOptions,
+  BasicAppOptions,
   GpsOptions,
-  DeviceOrientationControlsOptions
+  DeviceOrientationControlsOptions,
+  ThreeObjects,
+
 } from "../types/locar";
 
 

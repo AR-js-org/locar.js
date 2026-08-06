@@ -27,10 +27,15 @@ class App extends EventEmitter {
     #clickHandler: ClickHandler | null;
 
     /**
-      * Create an App object.
-      * @param {AppOptions} - Startup options.
-      */
-    constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection }: AppOptions) {
+     * Create an App object.
+     * @param {AppOptions} - Startup options.
+     * Note that you can only specify ONE of cameraOptions and threeObjects, as cameraOptions is intended to configure a new three.js camera,
+     * while threeObjects allows you to specify an existing camera, renderer and scene.
+     */
+    constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection, threeObjects }: AppOptions) {
+        if (threeObjects && cameraOptions) {
+            throw new Error("LocAR.App: ERROR: can only specify one of cameraOptions and threeObjects");
+        }
         super();
         this.origHfov = cameraOptions?.hFov || 80;
 
@@ -38,59 +43,72 @@ class App extends EventEmitter {
         this.cameraFeedDimensions = null;
 
         const aspect = window.innerWidth / window.innerHeight;
-        this.camera = new THREE.PerspectiveCamera(this.origHfov / aspect, aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
+        this.camera = threeObjects?.camera || new THREE.PerspectiveCamera(this.origHfov / aspect, aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
 
-        if (canvas) {
-            this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-            this.renderer.setClearColor(0x00ff00, opacity);
+        this.scene = threeObjects?.scene || new THREE.Scene();
 
-        } else {
-            this.renderer = new THREE.WebGLRenderer({ alpha: true });
-            this.renderer.setClearColor(0x00ff00, opacity);
-            document.body.appendChild(this.renderer.domElement);
-        }
+        // To allow us to use LocAR.App from environments such as react-three-fiber which provide three.js objects for us, 
+        // we only perform three.js setup if a "threeObjects" option was NOT specified.
+        if (!threeObjects) {
+            if (canvas) {
+                this.renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+                this.renderer.setClearColor(0x00ff00, opacity);
 
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+            } else {
+                this.renderer = new THREE.WebGLRenderer({ alpha: true });
+                this.renderer.setClearColor(0x00ff00, opacity);
+                // Ensure canvas is stacked on top of other elements so it can receive click events
+                this.renderer.domElement.style.position = 'relative';
+                this.renderer.domElement.style.zIndex = '999';
 
-        this.scene = new THREE.Scene();
+                document.body.appendChild(this.renderer.domElement);
+            }
 
-        const orientationOptions = deviceOrientationOptions || { enabled: true };
-
-        window.addEventListener("resize", () => {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-            const aspectScreen = window.innerWidth / window.innerHeight;
-            this.camera.aspect = aspectScreen;
-            if (this.cameraFeedDimensions !== null) {
-                const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
-                const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
-                this.#setActualFov(videoWidth, videoHeight, aspectScreen);
-            }
-            this.camera.updateProjectionMatrix();
-        });
+            this.renderer.setAnimationLoop(() => {
+                this.deviceOrientationControls?.update();
+                this.renderer.render(this.scene, this.camera);
+
+                const objects = this.#clickHandler?.raycast(this.camera, this.scene) ?? [];
+
+                if (objects.length > 0) {
+                    /**
+                     * Objects intersected event (from click handler/raycaster)
+                     * @event LocAR#objectsIntersected
+                     * @param {object} event object containing 'intersections' - THREE.Intersection[] array containing all intersections
+                     */
+                    this.emit("objectsIntersected", { intersections: objects });
+                }
+
+            });
+
+            window.addEventListener("resize", () => {
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+                const aspectScreen = window.innerWidth / window.innerHeight;
+                this.camera.aspect = aspectScreen;
+                if (this.cameraFeedDimensions !== null) {
+                    const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
+                    const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
+                    this.#setActualFov(videoWidth, videoHeight, aspectScreen);
+                }
+                this.camera.updateProjectionMatrix();
+            });
+
+        } else {
+            this.renderer = threeObjects.renderer;
+        }
+
+
+
+        const orientationOptions = deviceOrientationOptions || { enabled: true };
 
         this.locar = new LocAR(this.scene, this.camera, gpsOptions, serverLogger, projection);
 
         this.webcam = new Webcam(videoConstraints);
 
         this.deviceOrientationControls = orientationOptions.enabled === true ? new DeviceOrientationControls(this.camera, orientationOptions) : null;
-
-
-        this.renderer.setAnimationLoop(() => {
-            this.deviceOrientationControls?.update();
-            this.renderer.render(this.scene, this.camera);
-
-            const objects = this.#clickHandler?.raycast(this.camera, this.scene) ?? [];
-
-            if (objects.length > 0) {
-                /**
-                 * Objects intersected event (from click handler/raycaster)
-                 * @event LocAR#objectsIntersected
-                 * @param {object} event object containing 'intersections' - THREE.Intersection[] array containing all intersections
-                 */
-                this.emit("objectsIntersected", { intersections: objects });
-            }
-        });
 
         this.#clickHandler = null;
     }
