@@ -1,6 +1,6 @@
 {
   "name": "locar",
-  "version": "0.2.6-p9",
+  "version": "0.2.6",
   "description": "Location-based AR from AR.js.",
   "files": [
     "dist"
@@ -37,7 +37,7 @@
     "vite-plugin-dts": "^4.5.4"
   },
   "overrides": {
-    "brace-expansion" : "^5.0.8"
+    "brace-expansion" : "^5.0.9"
   },
   "dependencies": {
     "three": "^0.181.0"

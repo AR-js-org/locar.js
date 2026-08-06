@@ -1,5 +1,11 @@
 # Updates
 
+## `0.2.6` (2026-08-06)
+
+- Fix issues with raycasting when canvas is not positioned at (0,0).
+- Allow object picking via raycasting to be used directly from the `App` object via the `objectsIntersected` event, which will fire when the ray from the camera to the mouse click position intersects one or more objects (i.e. the user clicks on an object)
+- Allow existing three.js objects to be specified in the `App` options via the `threeObjects` option. This is useful if you have set up and configured your three.js objects elsewhere, such as `react-three-fiber`. Indeed, the primary aim is to make LocAR usage easier from React. Note that you cannot specify `cameraOptions` if you also specify `threeObjects`, as `cameraOptions` is intended for configuring your own three.js camera so the two are fundamentally incompatible.
+
 ## `0.2.5` (2026-07-29)
 
 - Clean up the video stream of `Webcam` correctly via a new `dispose()` method (thanks @coopbri for suggesting this via RDK updates)
