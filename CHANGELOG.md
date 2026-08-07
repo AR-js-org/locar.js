@@ -1,5 +1,9 @@
 # Updates
 
+## `0.2.7` (2026-08-07)
+
+- Add new `createGeoLine()` method to `LocAR`. This allows a triangle-strip based polyline geometry to be created without creating a mesh or adding it to the scene. This is useful in `react-three-fiber`, for example, where we might wish to create our mesh by other means. Note that `addGeoLine()` now uses `createGeoLine()` internally.
+
 ## `0.2.6` (2026-08-06)
 
 - Fix issues with raycasting when canvas is not positioned at (0,0).

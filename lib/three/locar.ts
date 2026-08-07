@@ -173,19 +173,19 @@ class LocAR extends EventEmitter {
     return this.eastNorthToWorldCoords(projectedPos);
   }
 
-   /**
-   * Convert projected east/north coordinates to three.js/WebGL world coordinates.
-   * Negates the northing (in typical projections, northings increase northwards,
-   * but in the WebGL coordinate system, we face negative z if the camera is at 
-   * the origin with default rotation).
-   * Must not be called until an initial position is determined.
-   * It is assumed that the projected position is in the correct projection - no check
-   * for this is made.
-   * @param {Array} projectedPos - the projected position.
-   * @return {Array} a two member array containing the WebGL x and z coordinates
-   */
-  eastNorthToWorldCoords(projectedPos: [number, number]) : [number, number] {
-     if (this.#initialPosition) {
+  /**
+  * Convert projected east/north coordinates to three.js/WebGL world coordinates.
+  * Negates the northing (in typical projections, northings increase northwards,
+  * but in the WebGL coordinate system, we face negative z if the camera is at 
+  * the origin with default rotation).
+  * Must not be called until an initial position is determined.
+  * It is assumed that the projected position is in the correct projection - no check
+  * for this is made.
+  * @param {Array} projectedPos - the projected position.
+  * @return {Array} a two member array containing the WebGL x and z coordinates
+  */
+  eastNorthToWorldCoords(projectedPos: [number, number]): [number, number] {
+    if (this.#initialPosition) {
       projectedPos[0] -= this.#initialPosition[0];
       projectedPos[1] -= this.#initialPosition[1];
     } else {
@@ -223,56 +223,79 @@ class LocAR extends EventEmitter {
     });
   }
 
+  /**
+   * Add a new triangle-strip based polyline to LocAR, defined by an array of points.
+   * Each point is a three-member array contaning longitude, latitude and optional altitude.
+   * @param {Array<[number, number, number?]>} points - the array of points
+   * @param {THREE.Material} material - the material to use
+   * @param {number} lineWidth - line width in world units (default 1)
+   * @return {THREE.Mesh} - mesh containing the polyline
+   */
   addGeoLine(
     points: Array<[number, number, number?]>,
     material: THREE.Material,
     lineWidth: number = 1
-  ) : THREE.Mesh {
-    const projectedLine : THREE.Vector3[] = points.map ( (point => {
-      const [x, z] = this.lonLatToWorldCoords(point[0], point[1]);
-      return new THREE.Vector3(x, point[2] || 0, z);
-    }));
-    const geom = this.#makeWayGeom(projectedLine, lineWidth);
-    material.setValues({ side: THREE.DoubleSide }) 
+  ): THREE.Mesh {
+    const geom = this.createGeoLine(points, lineWidth);
+    material.setValues({ side: THREE.DoubleSide })
     const mesh = new THREE.Mesh(geom, material);
     this.scene.add(mesh);
     return mesh;
   }
 
+  /**
+   * Create a new triangle-strip based polyline geometry, defined by an array of points.
+   * Each point is a three-member array contaning longitude, latitude and optional altitude.
+   * This method simply projects the coordinates and creates the geometry, it does not create a mesh.
+   * @param {Array<[number, number, number?]>} points - the array of points
+   * @param {number} lineWidth - line width in world units (default 1)
+   * @return {THREE.BufferGeometry} - the created geometry
+   */
+  createGeoLine(
+    points: Array<[number, number, number?]>,
+    lineWidth: number = 1
+  ): THREE.BufferGeometry {
+    const projectedLine: THREE.Vector3[] = points.map((point => {
+      const [x, z] = this.lonLatToWorldCoords(point[0], point[1]);
+      return new THREE.Vector3(x, point[2] || 0, z);
+    }));
+    return this.#makeWayGeom(projectedLine, lineWidth);
+  }
+
   #makeWayGeom(vertices: THREE.Vector3[], width: number) {
     let dx, dz, dy, len, dxperp = 0, dzperp = 0, nextVtxProvisional: Array<number> = [], thisVtxProvisional;
-    const k = vertices.length-1;
+    const k = vertices.length - 1;
     const realVertices = [];
-    for(let i=0; i<k; i++) {
-      dx = vertices[i+1].x - vertices[i].x;
-      dz = vertices[i+1].z - vertices[i].z;
-      dy = vertices[i+1].y - vertices[i].y;
-      len = Math.sqrt(dx*dx + dy*dy + dz*dz);
-      dxperp = -(dz * (width/2)) / len;
-      dzperp = dx * (width/2) / len;
+    for (let i = 0; i < k; i++) {
+      dx = vertices[i + 1].x - vertices[i].x;
+      dz = vertices[i + 1].z - vertices[i].z;
+      dy = vertices[i + 1].y - vertices[i].y;
+      len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      dxperp = -(dz * (width / 2)) / len;
+      dzperp = dx * (width / 2) / len;
       thisVtxProvisional = [
-        vertices[i].x-dxperp,
+        vertices[i].x - dxperp,
         vertices[i].y,
-        vertices[i].z-dzperp,
-        vertices[i].x+dxperp,
+        vertices[i].z - dzperp,
+        vertices[i].x + dxperp,
         vertices[i].y,
-        vertices[i].z+dzperp,
+        vertices[i].z + dzperp,
       ];
-      if(i > 0) {
+      if (i > 0) {
         // Ensure the vertex positions are influenced not just by this 
         // segment but also the previous segment
-        thisVtxProvisional.forEach ((vtx,j)=> {
+        thisVtxProvisional.forEach((vtx, j) => {
           vtx = (vtx + nextVtxProvisional[j]) / 2;
         });
       }
       realVertices.push(...thisVtxProvisional);
-       nextVtxProvisional = [
-        vertices[i+1].x-dxperp,
-        vertices[i+1].y,
-        vertices[i+1].z-dzperp,
-        vertices[i+1].x+dxperp,
-        vertices[i+1].y,
-        vertices[i+1].z+dzperp,
+      nextVtxProvisional = [
+        vertices[i + 1].x - dxperp,
+        vertices[i + 1].y,
+        vertices[i + 1].z - dzperp,
+        vertices[i + 1].x + dxperp,
+        vertices[i + 1].y,
+        vertices[i + 1].z + dzperp,
       ];
     }
     realVertices.push(vertices[k].x - dxperp);
@@ -283,15 +306,15 @@ class LocAR extends EventEmitter {
     realVertices.push(vertices[k].z + dzperp);
 
     let indices = [];
-    for(let i=0; i<k; i++) {
-      indices.push(i*2, i*2+1, i*2+2);
-      indices.push(i*2+1, i*2+3, i*2+2);
+    for (let i = 0; i < k; i++) {
+      indices.push(i * 2, i * 2 + 1, i * 2 + 2);
+      indices.push(i * 2 + 1, i * 2 + 3, i * 2 + 2);
     }
 
     let geom = new THREE.BufferGeometry();
     let bufVertices = new Float32Array(realVertices);
     geom.setIndex(indices);
-    geom.setAttribute('position', new THREE.BufferAttribute(bufVertices,3));
+    geom.setAttribute('position', new THREE.BufferAttribute(bufVertices, 3));
     geom.computeBoundingBox();
     return geom;
   }
@@ -394,8 +417,8 @@ class LocAR extends EventEmitter {
     const a =
       Math.sin(dlatitude / 2) * Math.sin(dlatitude / 2) +
       Math.cos(THREE.MathUtils.degToRad(src.latitude)) *
-        Math.cos(THREE.MathUtils.degToRad(dest.latitude)) *
-        (Math.sin(dlongitude / 2) * Math.sin(dlongitude / 2));
+      Math.cos(THREE.MathUtils.degToRad(dest.latitude)) *
+      (Math.sin(dlongitude / 2) * Math.sin(dlongitude / 2));
     const angle = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return angle * 6371000;
   }
@@ -408,7 +431,7 @@ class LocAR extends EventEmitter {
   getLastKnownLocation() {
     return this.#lastCoords;
   }
-   
+
 }
 
 export default LocAR;
