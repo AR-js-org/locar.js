@@ -5,10 +5,11 @@ export type { WebcamStartedEvent, WebcamErrorEvent } from "../types/locar";
 
 /** Class to setup the webcam. */
 class Webcam extends EventEmitter {
-  #video: HTMLVideoElement | null;
+  /** The raw HTMLVideoElement. */
+  video: HTMLVideoElement | null;
+  
   #stream: MediaStream | null;
-  sceneWebcam: THREE.Scene;
-
+  
   /**
    * Create a Webcam.
    * @param constraints {Object} - options to use for initialising the camera.
@@ -24,12 +25,11 @@ class Webcam extends EventEmitter {
   ) {
     super();
 
-    this.sceneWebcam = new THREE.Scene();
     if (!videoElementSelector) {
-      this.#video = document.createElement("video");
-      this.#video.setAttribute("autoplay", "true");
-      this.#video.setAttribute("playsinline", "true");
-      this.#video.style.cssText += `
+      this.video = document.createElement("video");
+      this.video.setAttribute("autoplay", "true");
+      this.video.setAttribute("playsinline", "true");
+      this.video.style.cssText += `
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -39,9 +39,9 @@ class Webcam extends EventEmitter {
         left: 0px;
 	      z-index: -100;  
       `;
-      document.body.appendChild(this.#video);
+      document.body.appendChild(this.video);
     } else {
-      this.#video = document.querySelector(videoElementSelector);
+      this.video = document.querySelector(videoElementSelector);
     }
 
     this.#stream = null;
@@ -51,18 +51,18 @@ class Webcam extends EventEmitter {
         .getUserMedia(constraints)
         .then((stream) => {
           this.#stream = stream;
-          this.#video?.addEventListener("loadedmetadata", () => {
+          this.video?.addEventListener("loadedmetadata", () => {
 
-            this.#video!.play();
+            this.video!.play();
             /**
              * Webcam started event.
              * @event Webcam#webcamstarted
              * @param {Object} event object containing video width and height.
              */
-            this.emit("webcamstarted", { videoWidth: this.#video!.videoWidth, videoHeight: this.#video!.videoHeight });
+            this.emit("webcamstarted", { videoWidth: this.video!.videoWidth, videoHeight: this.video!.videoHeight });
           });
-          if (this.#video) {
-            this.#video.srcObject = stream;
+          if (this.video) {
+            this.video.srcObject = stream;
           }
         })
         .catch((e) => {
@@ -85,7 +85,7 @@ class Webcam extends EventEmitter {
   }
 
   getVideoDimensions() {
-    return `w ${this.#video!.videoWidth}, h ${this.#video!.videoHeight}`
+    return `w ${this.video!.videoWidth}, h ${this.video!.videoHeight}`
   }
 
   /**
@@ -97,8 +97,8 @@ class Webcam extends EventEmitter {
     })
     this.#stream = null;
 
-    this.#video?.remove();
-    this.#video = null;
+    this.video?.remove();
+    this.video = null;
   }
 }
 
