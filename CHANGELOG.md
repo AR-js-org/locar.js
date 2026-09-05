@@ -1,5 +1,10 @@
 # Updates
 
+## `0.2.9` (2026-09-05)
+
+- Make `setActualFov()` in `App` public and rename to `matchFovToWebcam`. Apps that use their own Three objects (e.g. R3F/RDK) will need to call this to ensure the Three fov matches the world currently visible through the webcam.
+
+
 ## `0.2.8` (2026-09-01)
 
 - Make `video` (the raw `HTMLVideoElement`) public in `Webcam` in case developers need to query the video dimensions.
