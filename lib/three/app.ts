@@ -37,12 +37,13 @@ class App extends EventEmitter {
             throw new Error("LocAR.App: ERROR: can only specify one of cameraOptions and threeObjects");
         }
         super();
-        this.origHfov = cameraOptions?.hFov || 80;
+        const aspect = window.innerWidth / window.innerHeight;
+        this.origHfov = threeObjects?.camera ? threeObjects.camera.fov * aspect : cameraOptions?.hFov || 80;
 
         const opacity = 0;
         this.cameraFeedDimensions = null;
 
-        const aspect = window.innerWidth / window.innerHeight;
+        
         this.camera = threeObjects?.camera || new THREE.PerspectiveCamera(this.origHfov / aspect, aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
 
         this.scene = threeObjects?.scene || new THREE.Scene();
@@ -85,7 +86,8 @@ class App extends EventEmitter {
 
             window.addEventListener("resize", () => {
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.syncFovWithWebcam();
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.syncFovWithWebcam(this.camera.aspect);
             });
 
         } else {
@@ -164,9 +166,9 @@ class App extends EventEmitter {
      * three.js objects (i.e the threeObjects option has been provided to the constructor). 
      * 
      */
-    syncFovWithWebcam() {
-        const aspectScreen = window.innerWidth / window.innerHeight;
-        this.camera.aspect = aspectScreen;
+    syncFovWithWebcam(aspectScreen?: number) {
+        if(aspectScreen === undefined) aspectScreen = window.innerWidth / window.innerHeight;
+    
         if (this.cameraFeedDimensions !== null) {
             const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
             const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;

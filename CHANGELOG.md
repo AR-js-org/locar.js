@@ -1,5 +1,10 @@
 # Updates
 
+## `0.2.11` (2026-09-06)
+
+- Fix small issue with `syncFovWithWebcam()` which was changing the Three camera aspect; this is done automatically in R3F so we don't need to do it here.
+- Fix issue which was calculating `origHfov` incorrectly in cases where the Three camera is provided.
+
 ## `0.2.10` (2026-09-06)
 
 - Add new `syncFovWithWebcam()` method to `App` which obtains screen and webcam dimensions and calls `setActualFov()` (see 0.2.9 notes) to ensure the Three.js field of view is synced with the webcam field of view.
