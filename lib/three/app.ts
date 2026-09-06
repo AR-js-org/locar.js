@@ -85,15 +85,7 @@ class App extends EventEmitter {
 
             window.addEventListener("resize", () => {
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-                const aspectScreen = window.innerWidth / window.innerHeight;
-                this.camera.aspect = aspectScreen;
-                if (this.cameraFeedDimensions !== null) {
-                    const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
-                    const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
-                    this.matchFovToWebcam(videoWidth, videoHeight, aspectScreen);
-                }
-                this.camera.updateProjectionMatrix();
+                this.syncFovWithWebcam();
             });
 
         } else {
@@ -163,13 +155,29 @@ class App extends EventEmitter {
     }
 
     /**
-     * Set the correct three.js camera field of view based on the proportion of the webcam feed currently visible.
-     * It may be necessary to reduce the field of view to reflect the fact that not all the webcam feed (real world) is 
-     * currently visible.
+     * Sync the Three.js fov with the webcam.
+     * It may be necessary to adjust the Three fov to match the proportion of the world currently visible through the webcam,
+     * which will vary depending on orientation (portrait or landscape)
      * For example, if the device is in portrait, less of the world horizontally will be visible.
      * Mostly intended to be called internally: if you are developing a pure LocAR app you will not need to call this.
      * However it will be necessary to call this on each frame if another library/framework (typically R3F) has provided the 
      * three.js objects (i.e the threeObjects option has been provided to the constructor). 
+     * 
+     */
+    syncFovWithWebcam() {
+        const aspectScreen = window.innerWidth / window.innerHeight;
+        this.camera.aspect = aspectScreen;
+        if (this.cameraFeedDimensions !== null) {
+            const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
+            const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
+            this.matchFovToWebcam(videoWidth, videoHeight, aspectScreen);
+        }
+        this.camera.updateProjectionMatrix();
+    }
+
+    /**
+     * Set the correct three.js camera field of view based on the proportion of the webcam feed currently visible.
+     * 
      * @param {number} videoWidth - the current video feed width
      * @param {number} videoHeight  - the current video feed height
      * @param {number} aspectScreen  - the current screen aspect ratio

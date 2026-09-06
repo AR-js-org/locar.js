@@ -26,8 +26,6 @@ This also works nicely if you are using port forwarding with the Chrome Dev Tool
 
 The Vite config for **build mode** is configured for deploying to GitHub Pages, so you will need to tweak it if you want to build and run the examples locally.
 
-For the A-Frame examples you will need a build of `locar-aframe.js`, version `0.0.4-pre2`. You may need to modify the location of the built tarball of `locar-aframe.js`. Please see the `package.json`.
-
 ## List of examples
 
 The examples are as follows:

@@ -1,9 +1,13 @@
 # Updates
 
+## `0.2.10` (2026-09-06)
+
+- Add new `syncFovWithWebcam()` method to `App` which obtains screen and webcam dimensions and calls `setActualFov()` (see 0.2.9 notes) to ensure the Three.js field of view is synced with the webcam field of view.
+This is not needed for a pure LocAR app but is needed in an RDK or other R3F app which provides its own Three objects. It should be called on each frame if the orientation changes (landscape to portrait or v.v.)
+
 ## `0.2.9` (2026-09-05)
 
 - Make `setActualFov()` in `App` public and rename to `matchFovToWebcam`. Apps that use their own Three objects (e.g. R3F/RDK) will need to call this to ensure the Three fov matches the world currently visible through the webcam.
-
 
 ## `0.2.8` (2026-09-01)
 
