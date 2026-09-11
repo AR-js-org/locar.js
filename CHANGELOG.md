@@ -2,17 +2,18 @@
 
 ## `0.2.11` (2026-09-06)
 
-- Fix small issue with `syncFovWithWebcam()` which was changing the Three camera aspect; this is done automatically in R3F so we don't need to do it here.
+- Fix small issue with `syncFovWithWebcam()` which was changing the Three camera aspect unnecessarily; this is done automatically in R3F so we don't need to do it here.
 - Fix issue which was calculating `origHfov` incorrectly in cases where the Three camera is provided.
 
 ## `0.2.10` (2026-09-06)
 
-- Add new `syncFovWithWebcam()` method to `App` which obtains screen and webcam dimensions and calls `setActualFov()` (see 0.2.9 notes) to ensure the Three.js field of view is synced with the webcam field of view.
-This is not needed for a pure LocAR app but is needed in an RDK or other R3F app which provides its own Three objects. It should be called on each frame if the orientation changes (landscape to portrait or v.v.)
+- Add new `syncFovWithWebcam()` method to `App` which obtains screen and webcam dimensions and calls `setActualFov()` (see 0.2.9 notes) to ensure the Three.js field of view/aspect is synced with the webcam FOV/aspect. See issue #35. This has been fixed for a while but this new method makes it easier to hook into this functionality from other libraries e.g. R3F/RDK. It is needed in an RDK or other R3F app which provides its own Three objects. It should be called on each frame if the orientation changes (landscape to portrait or v.v.)
 
 ## `0.2.9` (2026-09-05)
 
-- Make `setActualFov()` in `App` public and rename to `matchFovToWebcam`. Apps that use their own Three objects (e.g. R3F/RDK) will need to call this to ensure the Three fov matches the world currently visible through the webcam.
+- Make `setActualFov()` in `App` public and rename to `matchFovToWebcam()`. 
+Apps that use their own Three objects (e.g. R3F/RDK) will need to call this to ensure the Three fov/aspect matches the world currently visible through the webcam. See issue #35.
+No changes needed for pure LocAR apps - this update simply exposes the functionality to external code.
 
 ## `0.2.8` (2026-09-01)
 
