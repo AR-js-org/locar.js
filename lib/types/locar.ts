@@ -30,6 +30,12 @@ export interface WebcamStartedEvent {
   videoHeight: number;
 }
 
+/** Event emitted when the webcam starts and we know the webcam dimensions in landscape mode. */
+export interface WebcamLandscapeDimensionsDeterminedEvent extends WebcamStartedEvent {
+  landVideoWidth: number;
+  landVideoHeight: number;
+}
+
 /** Event emitted when the webcam encounters an error. */
 export interface WebcamErrorEvent {
   code: string;
@@ -103,7 +109,8 @@ export interface BasicAppOptions {
   serverLogger?: ServerLogger;
   /** Existing three.js objects, set up elsewhere - e.g. react-three-fiber */
   threeObjects?: ThreeObjects;
-  
+  /** Optional function which provides canvas/screen dimensions in cases where we do not wish to use window width/height */
+  dimensionsProvider?: () => { width: number, height: number };
 }
 
 /** Full options including three.js configuration options. */

@@ -1,5 +1,11 @@
 # Updates
 
+## `0.2.12` (2026-09-16)
+
+- Bugfix: use correct horizontal-to-vertical and vertical-to-horizontal field of view conversion.
+- Re-emit `webcamstarted` event from `App`, with landscape-mode webcam dimensions added (type `WebcamLandscapeDimensionsDeterminedEvent`) in case other application components need to intercept this event, e.g. query the webcam feed dimensions.
+- Add `dimensionsProvider` option to `App` to allow the screen/canvas dimensions to be provided externally. Defaults to `window.innerWidth` and `window.innerHeight`, however, width and height from another library, such as R3F's `Size` object, can be provided here.
+
 ## `0.2.11` (2026-09-06)
 
 - Fix small issue with `syncFovWithWebcam()` which was changing the Three camera aspect unnecessarily; this is done automatically in R3F so we don't need to do it here.

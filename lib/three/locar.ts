@@ -434,24 +434,35 @@ class LocAR extends EventEmitter {
 
   /**
    * Accurate hfov -> vfov coversion.
-   * @param {number} hfov The horizontal field of view.
-   * @param {number} aspect The aspect ratio.
-   * @returns {number} Horizontal field of view.
-   * See https://stackoverflow.com/questions/26655930/90-degree-field-of-view-without-distortion-in-three-perspectivecamera/26665260#26665260
+   * @param {number} hfov The horizontal field of view in degrees
+   * @param {number} aspect The aspect ratio
+   * @returns {number} The vertical field of view in degrees
+   * See https://wojtsterna.com/2024/01/09/field-of-view-horizontal-and-vertical-conversion/
    */
   static htov(hfov: number, aspect: number) {
-    return (Math.atan(Math.tan(((hfov / 2) * Math.PI) / 180) / aspect) * 2 * 180) / Math.PI;
+    return this.fovScale(hfov, 1 / aspect);
   }
 
   /**
-  * Accurate vfov -> hfov coversion.
-  * @param {number} vfov The vertical field of view.
-  * @param {number} aspect The aspect ratio.
-  * @returns {number} Vertical field of view.
-  * See https://stackoverflow.com/questions/26655930/90-degree-field-of-view-without-distortion-in-three-perspectivecamera/26665260#26665260
-  */
+   * Accurate vfov -> hfov coversion.
+   * @param {number} vfov The vertical field of view in degrees
+   * @param {number} aspect The aspect ratio
+   * @returns {number} The horizontal field of view in degrees
+   * See https://wojtsterna.com/2024/01/09/field-of-view-horizontal-and-vertical-conversion/
+   */
   static vtoh(vfov: number, aspect: number) {
-    return 2 * Math.atan(Math.tan(vfov * Math.PI / 180 / 2) * aspect) * 180 / Math.PI;
+    return this.fovScale(vfov, aspect);
+  }
+
+  /**
+   * Scale a fov angle correctly according to changes in e.g. screen width or height
+   * @param {number} origAngleDeg The original angle in degrees
+   * @param {number} ratioOfFinalToOriginalDistances ratio of the final screen dimension to the original screen dimension
+   * @returns {number} The correctly scaled angle
+   * See https://wojtsterna.com/2024/01/09/field-of-view-horizontal-and-vertical-conversion/
+   */
+  static fovScale(origAngleDeg: number, ratioOfFinalToOriginalDistances: number) {
+    return 2 * Math.atan(ratioOfFinalToOriginalDistances * Math.tan((Math.PI / 180) * (origAngleDeg / 2))) * (180 / Math.PI);
   }
 
 }

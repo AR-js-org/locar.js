@@ -25,6 +25,7 @@ class App extends EventEmitter {
     cameraFeedDimensions: { landWidth: number, landHeight: number } | null; /** camera feed dimensions in LANDSCAPE  */
     origHfov: number;
     #clickHandler: ClickHandler | null;
+    dimensionsProvider?: () => { width: number; height: number };
 
     /**
      * Create an App object.
@@ -32,12 +33,17 @@ class App extends EventEmitter {
      * Note that you can only specify ONE of cameraOptions and threeObjects, as cameraOptions is intended to configure a new three.js camera,
      * while threeObjects allows you to specify an existing camera, renderer and scene.
      */
-    constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection, threeObjects }: AppOptions) {
+    constructor({ cameraOptions, canvas, gpsOptions, videoConstraints, deviceOrientationOptions, serverLogger, projection, threeObjects, dimensionsProvider }: AppOptions) {
         if (threeObjects && cameraOptions) {
             throw new Error("LocAR.App: ERROR: can only specify one of cameraOptions and threeObjects");
         }
         super();
-        const aspect = window.innerWidth / window.innerHeight;
+
+        this.dimensionsProvider = dimensionsProvider;
+
+        const { width, height } = this.#getDimensions();
+        const aspect = width / height;
+
         this.origHfov = threeObjects?.camera ? LocAR.vtoh(threeObjects.camera.fov, aspect) : cameraOptions?.hFov || 80;
 
         const opacity = 0;
@@ -47,6 +53,7 @@ class App extends EventEmitter {
         this.camera = threeObjects?.camera || new THREE.PerspectiveCamera(LocAR.htov(this.origHfov, aspect), aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
 
         this.scene = threeObjects?.scene || new THREE.Scene();
+
 
         // To allow us to use LocAR.App from environments such as react-three-fiber which provide three.js objects for us, 
         // we only perform three.js setup if a "threeObjects" option was NOT specified.
@@ -65,7 +72,7 @@ class App extends EventEmitter {
                 document.body.appendChild(this.renderer.domElement);
             }
 
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+            this.renderer.setSize(width, height);
 
             this.renderer.setAnimationLoop(() => {
                 this.deviceOrientationControls?.update();
@@ -85,8 +92,9 @@ class App extends EventEmitter {
             });
 
             window.addEventListener("resize", () => {
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.camera.aspect = window.innerWidth / window.innerHeight;
+                const { width, height } = this.#getDimensions();
+                this.renderer.setSize(width, height);
+                this.camera.aspect = width / height;
                 this.syncFovWithWebcam(this.camera.aspect);
             });
 
@@ -124,8 +132,10 @@ class App extends EventEmitter {
                     landHeight: isLand ? ev.videoHeight : ev.videoWidth
                 };
 
-                this.matchFovToWebcam(ev.videoWidth, ev.videoHeight, window.innerWidth / window.innerHeight);
+                const { width, height } = this.#getDimensions();
+                this.matchFovToWebcam(ev.videoWidth, ev.videoHeight, width / height);
                 this.camera.updateProjectionMatrix();
+                this.emit("webcamstarted", { ...ev, landVideoWidth: this.cameraFeedDimensions.landWidth, landVideoHeight: this.cameraFeedDimensions.landHeight });
             });
 
             /**
@@ -167,7 +177,10 @@ class App extends EventEmitter {
      * 
      */
     syncFovWithWebcam(aspectScreen?: number) {
-        if (aspectScreen === undefined) aspectScreen = window.innerWidth / window.innerHeight;
+        if (aspectScreen === undefined) {
+            const { width, height } = this.#getDimensions();
+            aspectScreen = width / height;
+        }
 
         if (this.cameraFeedDimensions !== null) {
             const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
@@ -194,11 +207,11 @@ class App extends EventEmitter {
             // In this case the webcam video will be scaled to touch the bottom of the screen vertically.
             // So it's scaled by a factor of screenHeight/videoHeight
             // To get the webcam video width after scaling (including the off-screen part), we multiply the original width by this factor.
-            const scaledVideoWidth = videoWidth * (window.innerHeight / videoHeight);
+            const { width, height } = this.#getDimensions();
+            const scaledVideoWidth = videoWidth * (height / videoHeight);
 
             // the fov thus needs to be adjusted by the window width divided by this scaled camera width
-            //const curHfov = this.origHfov * (window.innerWidth / scaledVideoWidth);
-            const curHfov = (2 * Math.atan((window.innerWidth / scaledVideoWidth) * Math.tan((this.origHfov * (Math.PI / 180)) / 2))) * (180 / Math.PI);
+            const curHfov = LocAR.fovScale(this.origHfov, width / scaledVideoWidth);
 
             // Three camera uses vertical, not horizontal, fov
             this.camera.fov = LocAR.htov(curHfov, aspectScreen);
@@ -218,6 +231,10 @@ class App extends EventEmitter {
             this.#clickHandler = new ClickHandler(this.renderer);
         }
         super.on(eventName, eventHandler);
+    }
+
+    #getDimensions(): { width: number, height: number } {
+        return this.dimensionsProvider?.() ?? { width: window.innerWidth, height: window.innerHeight };
     }
 }
 
