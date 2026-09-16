@@ -432,6 +432,28 @@ class LocAR extends EventEmitter {
     return this.#lastCoords;
   }
 
+  /**
+   * Accurate hfov -> vfov coversion.
+   * @param {number} hfov The horizontal field of view.
+   * @param {number} aspect The aspect ratio.
+   * @returns {number} Horizontal field of view.
+   * See https://stackoverflow.com/questions/26655930/90-degree-field-of-view-without-distortion-in-three-perspectivecamera/26665260#26665260
+   */
+  static htov(hfov: number, aspect: number) {
+    return (Math.atan(Math.tan(((hfov / 2) * Math.PI) / 180) / aspect) * 2 * 180) / Math.PI;
+  }
+
+  /**
+  * Accurate vfov -> hfov coversion.
+  * @param {number} vfov The vertical field of view.
+  * @param {number} aspect The aspect ratio.
+  * @returns {number} Vertical field of view.
+  * See https://stackoverflow.com/questions/26655930/90-degree-field-of-view-without-distortion-in-three-perspectivecamera/26665260#26665260
+  */
+  static vtoh(vfov: number, aspect: number) {
+    return 2 * Math.atan(Math.tan(vfov * Math.PI / 180 / 2) * aspect) * 180 / Math.PI;
+  }
+
 }
 
 export default LocAR;

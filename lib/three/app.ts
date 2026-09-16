@@ -38,13 +38,13 @@ class App extends EventEmitter {
         }
         super();
         const aspect = window.innerWidth / window.innerHeight;
-        this.origHfov = threeObjects?.camera ? threeObjects.camera.fov * aspect : cameraOptions?.hFov || 80;
+        this.origHfov = threeObjects?.camera ? LocAR.vtoh(threeObjects.camera.fov, aspect) : cameraOptions?.hFov || 80;
 
         const opacity = 0;
         this.cameraFeedDimensions = null;
 
-        
-        this.camera = threeObjects?.camera || new THREE.PerspectiveCamera(this.origHfov / aspect, aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
+
+        this.camera = threeObjects?.camera || new THREE.PerspectiveCamera(LocAR.htov(this.origHfov, aspect), aspect, cameraOptions?.near || 0.001, cameraOptions?.far || 1000);
 
         this.scene = threeObjects?.scene || new THREE.Scene();
 
@@ -167,8 +167,8 @@ class App extends EventEmitter {
      * 
      */
     syncFovWithWebcam(aspectScreen?: number) {
-        if(aspectScreen === undefined) aspectScreen = window.innerWidth / window.innerHeight;
-    
+        if (aspectScreen === undefined) aspectScreen = window.innerWidth / window.innerHeight;
+
         if (this.cameraFeedDimensions !== null) {
             const videoWidth = aspectScreen > 1 ? this.cameraFeedDimensions.landWidth : this.cameraFeedDimensions.landHeight;
             const videoHeight = aspectScreen > 1 ? this.cameraFeedDimensions.landHeight : this.cameraFeedDimensions.landWidth;
@@ -197,12 +197,13 @@ class App extends EventEmitter {
             const scaledVideoWidth = videoWidth * (window.innerHeight / videoHeight);
 
             // the fov thus needs to be adjusted by the window width divided by this scaled camera width
-            const curHfov = this.origHfov * (window.innerWidth / scaledVideoWidth);
+            //const curHfov = this.origHfov * (window.innerWidth / scaledVideoWidth);
+            const curHfov = (2 * Math.atan((window.innerWidth / scaledVideoWidth) * Math.tan((this.origHfov * (Math.PI / 180)) / 2))) * (180 / Math.PI);
 
             // Three camera uses vertical, not horizontal, fov
-            this.camera.fov = curHfov / aspectScreen;
+            this.camera.fov = LocAR.htov(curHfov, aspectScreen);
         } else {
-            this.camera.fov = this.origHfov / aspectScreen;
+            this.camera.fov = LocAR.htov(this.origHfov, aspectScreen);
         }
     }
 
