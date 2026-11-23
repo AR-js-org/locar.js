@@ -51,12 +51,81 @@ const _zee = new Vector3(0, 0, 1);
 const _euler = new Euler();
 const _q0 = new Quaternion();
 const _q1 = new Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); // - PI/2 around the x-axis
+const _q2 = new Quaternion();
+const _forward = new Vector3();
+const _up = new Vector3();
 
 const TWO_PI: number = 2 * Math.PI;
 const HALF_PI: number = 0.5 * Math.PI;
 
 type DeviceOrientationEventWithCompass = DeviceOrientationEvent & {
   webkitCompassHeading?: number;
+  webkitCompassAccuracy?: number;
+};
+
+// iOS only - see issue #36.
+// alpha is relative to an arbitrary direction on iOS, so north has to come
+// from webkitCompassHeading. Measurements on an iPhone show that
+// webkitCompassHeading is neither the heading of the top edge of the device
+// nor that of the camera: it is the rotation of the device about the vertical
+// which is left once the tilt has been removed by the shortest possible
+// rotation, i.e.
+//   webkitCompassHeading = -(absolute alpha + tiltTwist(beta, gamma))
+// Once the screen faces the ground by more than 45 degrees, iOS calculates
+// the same for the device seen from its back (turned over about its long
+// axis): this is the faceDown case.
+
+// Vertical component of the screen normal at which iOS switches to faceDown
+const FACE_DOWN_LIMIT = -Math.SQRT1_2;
+// Range either side of the limit in which we stay with the case we came from
+const FACE_DOWN_BAND = 0.05;
+
+const tiltTwist = (beta: number, gamma: number, faceDown: boolean) => {
+  const sinB = Math.sin(beta / 2);
+  const cosB = Math.cos(beta / 2);
+  const sinG = Math.sin(gamma / 2);
+  const cosG = Math.cos(gamma / 2);
+  return faceDown
+    ? 2 * Math.atan2(sinB * cosG, -cosB * sinG)
+    : 2 * Math.atan2(sinB * sinG, cosB * cosG);
+};
+
+const angleBetween = (a: number, b: number) =>
+  Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+
+/**
+ * Calculate the offset which turns the relative alpha of iOS into an
+ * absolute one.
+ * @param {number} alpha - alpha from the deviceorientation event (degrees)
+ * @param {number} beta - beta from the deviceorientation event (degrees)
+ * @param {number} gamma - gamma from the deviceorientation event (degrees)
+ * @param {number} webkitCompassHeading - the iOS compass heading (degrees)
+ * @param {number|null} previousOffset - the last offset, or null if there is
+ * none yet. Only used close to the face-down limit.
+ * @returns {number} the offset to add to alpha, in radians
+ */
+const iosAlphaOffset = (
+  alpha: number,
+  beta: number,
+  gamma: number,
+  webkitCompassHeading: number,
+  previousOffset: number | null,
+) => {
+  const b = MathUtils.degToRad(beta);
+  const g = MathUtils.degToRad(gamma);
+  const untilted = MathUtils.degToRad(360 - webkitCompassHeading - alpha);
+  const screenNormal = Math.cos(b) * Math.cos(g);
+
+  let faceDown = screenNormal < FACE_DOWN_LIMIT;
+  if (
+    previousOffset !== null &&
+    Math.abs(screenNormal - FACE_DOWN_LIMIT) < FACE_DOWN_BAND
+  ) {
+    faceDown =
+      angleBetween(untilted - tiltTwist(b, g, true), previousOffset) <
+      angleBetween(untilted - tiltTwist(b, g, false), previousOffset);
+  }
+  return untilted - tiltTwist(b, g, faceDown);
 };
 
 
@@ -130,6 +199,9 @@ class DeviceOrientationControls extends EventDispatcher {
         ? "deviceorientationabsolute"
         : "deviceorientation";
 
+    // iOS: whether alphaOffset has been derived from a valid compass reading
+    let hasCompassOffset = false;
+
     this.smoothingFactor = options.smoothingFactor || 0.2;
     this.enablePermissionDialog = options.enablePermissionDialog ?? true;
     this.enableInlineStyling = options.enableStyling ?? true;
@@ -146,8 +218,19 @@ class DeviceOrientationControls extends EventDispatcher {
       webkitCompassHeading = webkitCompassHeading ?? 0;
 
       if (isIOS) {
-        const ccwNorthHeading = 360 - webkitCompassHeading;
-        scope.alphaOffset = MathUtils.degToRad(ccwNorthHeading - alpha);
+        // While the compass has no reading (accuracy -1), iOS reports a
+        // heading of 0: keep the last offset rather than using that.
+        const compassValid = !((event.webkitCompassAccuracy ?? 0) < 0);
+        if (compassValid || !hasCompassOffset) {
+          scope.alphaOffset = iosAlphaOffset(
+            alpha,
+            beta,
+            gamma,
+            webkitCompassHeading,
+            hasCompassOffset ? scope.alphaOffset : null,
+          );
+          hasCompassOffset = compassValid;
+        }
         scope.deviceOrientation = { alpha, beta, gamma, webkitCompassHeading };
       } else {
         if (alpha < 0) alpha += 360;
@@ -163,9 +246,15 @@ class DeviceOrientationControls extends EventDispatcher {
     const onScreenOrientationChangeEvent = () => {
       scope.screenOrientation = window.screen.orientation?.angle ?? 0;
       if (isIOS) {
+        // No longer used for the camera as alphaOffset now accounts for any
+        // roll (issue #36), but kept up to date for apps which read it.
+        // Note that screen.orientation.angle is 270, not -90, on iOS.
         if (scope.screenOrientation === 90) {
           scope.orientationOffset = -HALF_PI;
-        } else if (scope.screenOrientation === -90) {
+        } else if (
+          scope.screenOrientation === -90 ||
+          scope.screenOrientation === 270
+        ) {
           scope.orientationOffset = HALF_PI;
         } else {
           scope.orientationOffset = 0;
@@ -227,6 +316,7 @@ class DeviceOrientationControls extends EventDispatcher {
       scope.initialOffset = false;
       scope.deviceOrientation = null;
       scope.lastQuaternion = null;
+      hasCompassOffset = false;
     };
 
     // On iOS 13+ devices, request orientation permissions
@@ -290,9 +380,9 @@ class DeviceOrientationControls extends EventDispatcher {
       const device = scope.deviceOrientation;
 
       if (device) {
-        let alpha = device.alpha
-          ? MathUtils.degToRad(device.alpha) + scope.alphaOffset
-          : 0; // Z
+        // On iOS, alphaOffset makes the relative alpha absolute (see
+        // iosAlphaOffset() above). Elsewhere it is 0 unless set by the app.
+        let alpha = MathUtils.degToRad(device.alpha ?? 0) + scope.alphaOffset; // Z
 
         let beta = device.beta ? MathUtils.degToRad(device.beta) : 0; // X'
 
@@ -304,24 +394,7 @@ class DeviceOrientationControls extends EventDispatcher {
 
         const targetQuaternion = new Quaternion();
 
-        if (isIOS) {
-          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
-
-          const targetEuler = new Euler().setFromQuaternion(
-            targetQuaternion,
-            "YXZ",
-          );
-
-          const compassY = MathUtils.degToRad(
-            360 - (device.webkitCompassHeading ?? 0),
-          );
-
-          targetEuler.y = compassY + (scope.orientationOffset || 0);
-          targetQuaternion.setFromEuler(targetEuler);
-        } else {
-          // Non-iOS path
-          setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
-        }
+        setObjectQuaternion(targetQuaternion, alpha, beta, gamma, orient);
 
         // Apply threshold check if needed
         if (scope.lastQuaternion && scope.orientationChangeThreshold > 0) {
@@ -356,12 +429,30 @@ class DeviceOrientationControls extends EventDispatcher {
       let heading = 0;
 
       if (isIOS) {
-        // iOS always uses webkitCompassHeading
-        heading = 360 - (device.webkitCompassHeading ?? 0);
-        if (scope.orientationOffset) {
-          heading += scope.orientationOffset * (180 / Math.PI);
-          heading = (heading + 360) % 360;
-        }
+        // iOS: counter-clockwise heading of the direction the camera is
+        // looking in. Uses the same orientation as update() gives to the
+        // camera, so it does not change if the device is rolled (issue #36)
+        setObjectQuaternion(
+          _q2,
+          scope.getAlpha(),
+          scope.getBeta(),
+          scope.getGamma(),
+          MathUtils.degToRad(scope.screenOrientation || 0),
+        );
+        _forward.set(0, 0, -1).applyQuaternion(_q2);
+        _up.set(0, 1, 0).applyQuaternion(_q2);
+        // When looking steeply down or up, the view direction has no usable
+        // heading, so fade over to the direction the top of the screen
+        // points in (as before, e.g. with the device lying flat)
+        const upWeight = MathUtils.smoothstep(Math.abs(_forward.y), 0.87, 0.98);
+        if (_forward.y > 0) _up.negate();
+        _forward
+          .setY(0)
+          .normalize()
+          .multiplyScalar(1 - upWeight);
+        _forward.addScaledVector(_up.setY(0).normalize(), upWeight);
+        heading = MathUtils.radToDeg(Math.atan2(-_forward.x, -_forward.z));
+        heading = (heading + 360) % 360;
       } else {
         // Android: Check if we have absolute values
         const isAbsolute =
@@ -393,8 +484,8 @@ class DeviceOrientationControls extends EventDispatcher {
     // provided with fix on issue #466 (main AR.js)
     this.getAlpha = () => {
       const { deviceOrientation: device } = scope;
-      return device && device.alpha
-        ? MathUtils.degToRad(device.alpha) + scope.alphaOffset
+      return device
+        ? MathUtils.degToRad(device.alpha ?? 0) + scope.alphaOffset
         : 0;
     };
 
